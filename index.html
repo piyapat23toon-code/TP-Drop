@@ -6,7 +6,13 @@
   <title>TP Drop</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts: Prompt / Noto Sans Thai & Inter -->
+  <!-- PeerJS for Real Cross-Device WebRTC P2P -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <!-- QRCode.js for Real Scannable QR Code -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- HTML5-QRCode for Camera Scanning -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <!-- Google Fonts: Inter & Noto Sans Thai -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -20,14 +26,14 @@
             sans: ['"Inter"', '"Noto Sans Thai"', 'sans-serif'],
           },
           colors: {
-            bgMain: '#090b0e',
-            cardBg: '#101318',
-            cardBorder: '#1d222b',
-            inputBg: '#0c0e12',
-            tealActiveBg: '#0d2e33',
-            tealActiveBorder: '#134e56',
-            tealAccent: '#2dd4bf',
-            cyanBadge: '#00a8cc',
+            bgMain: '#060a12',
+            cardBg: '#0b111e',
+            cardBorder: '#19253d',
+            inputBg: '#070c16',
+            blueActiveBg: '#102447',
+            blueActiveBorder: '#1d4ed8',
+            blueAccent: '#60a5fa',
+            royalBlue: '#2563eb',
           }
         }
       }
@@ -36,7 +42,10 @@
 
   <style>
     body {
-      background-color: #090b0e;
+      background-color: #060a12;
+      background-image: 
+        radial-gradient(at 15% 10%, rgba(37, 99, 235, 0.11) 0px, transparent 45%),
+        radial-gradient(at 85% 90%, rgba(59, 130, 246, 0.08) 0px, transparent 50%);
       color: #e2e8f0;
       font-family: 'Inter', 'Noto Sans Thai', sans-serif;
       overflow-x: hidden;
@@ -48,111 +57,121 @@
       height: 6px;
     }
     ::-webkit-scrollbar-track {
-      background: #090b0e;
+      background: #060a12;
     }
     ::-webkit-scrollbar-thumb {
-      background: #1e2430;
+      background: #19253d;
       border-radius: 9999px;
     }
     ::-webkit-scrollbar-thumb:hover {
-      background: #2e3748;
+      background: #2563eb;
     }
 
-    /* Code input styling */
+    /* PIN Input styling */
     .pin-input {
-      transition: all 0.18s ease;
+      transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .pin-input:focus {
-      border-color: #00b4d8;
-      box-shadow: 0 0 0 2px rgba(0, 180, 216, 0.2);
+      border-color: #3b82f6;
+      background-color: #0c1629;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
       outline: none;
+      transform: translateY(-1px);
     }
 
-    /* Subtle float animation for the cute droplet mascot */
+    /* Floating mascot animation */
     @keyframes floatSlow {
       0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-5px); }
+      50% { transform: translateY(-6px); }
     }
     .mascot-float {
       animation: floatSlow 3.5s ease-in-out infinite;
     }
 
-    /* Drag overlay effect */
+    /* Drag active border highlight */
     .drag-active {
-      border-color: #2dd4bf !important;
-      background-color: rgba(13, 46, 51, 0.25) !important;
+      border-color: #3b82f6 !important;
+      background-color: rgba(37, 99, 235, 0.18) !important;
+      box-shadow: 0 0 25px rgba(37, 99, 235, 0.25);
+    }
+
+    /* QR container fix */
+    #qrcodeContainer img, #qrcodeContainer canvas {
+      margin: 0 auto;
+      border-radius: 8px;
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col selection:bg-teal-500/30 selection:text-teal-200">
+<body class="min-h-screen flex flex-col selection:bg-blue-500/30 selection:text-blue-200">
 
   <!-- Full-window Drag Overlay -->
-  <div id="globalDragOverlay" class="fixed inset-0 z-50 pointer-events-none opacity-0 transition-opacity duration-200 bg-black/70 backdrop-blur-sm flex items-center justify-center p-6">
-    <div class="border-2 border-dashed border-teal-400 bg-[#0d2e33]/60 rounded-3xl p-12 text-center max-w-md w-full shadow-2xl">
-      <div class="w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-        <!-- Cute Droplet SVG -->
-        <svg viewBox="0 0 100 120" class="w-16 h-20">
-          <path d="M50 8 C50 8 14 56 14 82 C14 102 30 114 50 114 C70 114 86 102 86 82 C86 56 50 8 50 8 Z" fill="#177e89" />
-          <path d="M50 8 C50 8 23 54 23 80 C23 97 35 108 50 108 C65 108 77 97 77 80 C77 54 50 8 50 8 Z" fill="#1dbab4" />
-          <ellipse cx="34" cy="64" rx="5" ry="9" transform="rotate(20 34 64)" fill="#5eead4" opacity="0.6"/>
-          <circle cx="38" cy="82" r="4.2" fill="#0f172a"/>
-          <circle cx="62" cy="82" r="4.2" fill="#0f172a"/>
-          <circle cx="36.5" cy="80.5" r="1.5" fill="#ffffff"/>
-          <circle cx="60.5" cy="80.5" r="1.5" fill="#ffffff"/>
-          <ellipse cx="31" cy="88" rx="4" ry="2.2" fill="#f43f5e" opacity="0.55"/>
-          <ellipse cx="69" cy="88" rx="4" ry="2.2" fill="#f43f5e" opacity="0.55"/>
-          <path d="M44 89 Q50 95 56 89" stroke="#0f172a" stroke-width="3" stroke-linecap="round" fill="none"/>
-        </svg>
+  <div id="globalDragOverlay" class="fixed inset-0 z-50 pointer-events-none opacity-0 transition-opacity duration-200 bg-[#050914]/80 backdrop-blur-md flex items-center justify-center p-6">
+    <div class="border-2 border-dashed border-blue-400 bg-[#0e1b33]/80 rounded-3xl p-12 text-center max-w-md w-full shadow-2xl shadow-blue-500/20">
+      <div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-4xl shadow-lg shadow-blue-500/30">
+        📲
       </div>
-      <h3 class="text-xl font-semibold text-teal-300 mb-1">ปล่อยไฟล์เพื่อส่งทันที</h3>
-      <p class="text-sm text-slate-300">วางไฟล์ตรงไหนของหน้านี้ก็ได้</p>
+      <h3 class="text-xl font-bold text-blue-300 mb-1">ปล่อยไฟล์เพื่อส่งผ่าน TP Drop</h3>
+      <p class="text-sm text-slate-300">รองรับการส่งหลายไฟล์พร้อมกันทุกนามสกุล</p>
     </div>
   </div>
 
   <!-- Main Container -->
-  <div class="max-w-[1040px] w-full mx-auto px-4 sm:px-6 pt-5 pb-16 flex-1">
+  <div class="max-w-[1080px] w-full mx-auto px-4 sm:px-6 pt-5 pb-16 flex-1">
     
     <!-- Top Header -->
-    <header class="flex items-center justify-between mb-6">
+    <header class="flex flex-wrap items-center justify-between gap-4 mb-6">
       <div class="flex items-center gap-3.5">
-        <!-- App Logo Icon -->
-        <div class="w-11 h-11 rounded-2xl bg-gradient-to-b from-[#25c4e8] to-[#0096c7] flex items-center justify-center shadow-lg shadow-cyan-500/15 select-none cursor-pointer" onclick="resetOrDemoToast()">
-          <svg viewBox="0 0 36 36" class="w-7 h-7" fill="none">
-            <!-- Water droplet -->
-            <path d="M18 5C18 5 9 15.8 9 21.5C9 26.2 13.0294 29.5 18 29.5C22.9706 29.5 27 26.2 27 21.5C27 15.8 18 5 18 5Z" fill="white"/>
-            <!-- Subtle puddle ring underneath -->
-            <ellipse cx="18" cy="31.5" rx="9" ry="1.8" fill="white" fill-opacity="0.75"/>
-          </svg>
+        <!-- App Logo Icon 📲 -->
+        <div onclick="resetOrDemoToast()" class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#3b82f6] via-[#2563eb] to-[#1d4ed8] flex items-center justify-center shadow-lg shadow-blue-600/30 border border-blue-400/30 select-none cursor-pointer hover:scale-105 transition-transform">
+          <span class="text-2xl filter drop-shadow">📲</span>
         </div>
         <div>
-          <h1 class="text-[19px] font-bold tracking-tight text-white leading-tight">Dropple</h1>
-          <div class="flex items-center gap-2 mt-0.5">
+          <div class="flex items-center gap-2.5">
+            <h1 class="text-[20px] font-bold tracking-tight text-white leading-tight">TP Drop</h1>
+            <span class="text-[11px] font-medium px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30">
+              WebRTC P2P
+            </span>
+          </div>
+          <div class="flex items-center gap-2 mt-1">
             <!-- Connection Status Dot -->
-            <span id="statusDot" class="w-2.5 h-2.5 rounded-full bg-[#ef4444] inline-block transition-colors duration-300" title="สถานะการเชื่อมต่อ"></span>
-            <span id="statusText" class="text-[11px] text-slate-400 hidden sm:inline">ยังไม่ได้เชื่อมต่อ</span>
+            <span id="statusDot" class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block transition-all duration-300" title="สถานะเครือข่าย"></span>
+            <span id="statusText" class="text-xs text-slate-400">กำลังเตรียมเครือข่าย P2P...</span>
+            <span class="text-slate-600 hidden sm:inline">•</span>
+            <span id="myRoomBadge" onclick="switchTab('receive')" class="text-xs text-blue-400 hover:text-blue-300 font-medium cursor-pointer hidden sm:inline" title="คลิกเพื่อดูรหัสเครื่องและ QR Code">
+              รหัสเครื่องนี้: <strong id="headerMyCode" class="font-mono tracking-wider">------</strong>
+            </span>
           </div>
         </div>
       </div>
 
       <!-- Right Action Buttons -->
-      <div class="flex items-center gap-2.5">
+      <div class="flex items-center gap-2">
+        <!-- Copy Quick Pair Link -->
+        <button onclick="copyInviteLink()" class="h-10 px-3.5 rounded-xl bg-[#0c1322] border border-[#19253d] hover:border-blue-500/50 hover:bg-[#111c33] flex items-center gap-2 text-xs font-medium text-blue-300 transition-all" title="คัดลอกลิงก์จับคู่อัตโนมัติส่งให้เพื่อน">
+          <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+          </svg>
+          <span class="hidden sm:inline">ลิงก์จับคู่ด่วน</span>
+        </button>
+
+        <!-- GitHub Pages Guide Button -->
+        <button onclick="openModal('githubModal')" class="h-10 px-3 rounded-xl bg-[#0c1322] border border-[#19253d] hover:border-blue-500/50 hover:bg-[#111c33] flex items-center gap-1.5 text-xs font-medium text-slate-300 hover:text-white transition-all" title="วิธีนำขึ้น GitHub Pages และแก้ปัญหาการเชื่อมต่อ">
+          <svg class="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"></path>
+          </svg>
+          <span class="hidden md:inline">GitHub Pages</span>
+        </button>
+
         <!-- Help Button -->
-        <button onclick="openModal('helpModal')" class="w-10 h-10 rounded-xl bg-[#11141b] border border-[#1e232d] hover:border-slate-700 hover:bg-[#171b24] flex items-center justify-center text-slate-400 hover:text-slate-200 transition-all" title="วิธีใช้งาน">
+        <button onclick="openModal('helpModal')" class="w-10 h-10 rounded-xl bg-[#0c1322] border border-[#19253d] hover:border-blue-500/50 hover:bg-[#111c33] flex items-center justify-center text-slate-400 hover:text-white transition-all" title="วิธีใช้งาน">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="9"></circle>
             <path stroke-linecap="round" stroke-linejoin="round" d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01"></path>
           </svg>
         </button>
 
-        <!-- Coffee / Support Button -->
-        <button onclick="openModal('coffeeModal')" class="w-10 h-10 rounded-xl bg-[#11141b] border border-[#1e232d] hover:border-amber-500/40 hover:bg-[#171b24] flex items-center justify-center text-[#f59e0b] transition-all" title="สนับสนุนผู้พัฒนา">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zm4-6v2m4-2v2m4-2v2"></path>
-          </svg>
-        </button>
-
         <!-- Settings Button -->
-        <button onclick="openModal('settingsModal')" class="w-10 h-10 rounded-xl bg-[#11141b] border border-[#1e232d] hover:border-slate-700 hover:bg-[#171b24] flex items-center justify-center text-slate-400 hover:text-slate-200 transition-all" title="ตั้งค่า">
+        <button onclick="openModal('settingsModal')" class="w-10 h-10 rounded-xl bg-[#0c1322] border border-[#19253d] hover:border-blue-500/50 hover:bg-[#111c33] flex items-center justify-center text-slate-400 hover:text-white transition-all" title="ตั้งค่าระบบ">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
             <circle cx="12" cy="12" r="3"></circle>
@@ -162,23 +181,32 @@
     </header>
 
     <!-- Mode Switcher Tabs (รับไฟล์ / ส่งไฟล์) -->
-    <div class="inline-flex p-1.5 rounded-2xl bg-[#101318] border border-[#1d222b] mb-6 w-full sm:w-[360px]">
-      <!-- Receive Tab -->
-      <button id="tabReceiveBtn" onclick="switchTab('receive')" class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-medium transition-all text-slate-400 hover:text-slate-200 border border-transparent">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3"></path>
-        </svg>
-        <span>รับไฟล์</span>
-        <span id="receiveBadge" class="hidden ml-1 px-1.5 py-0.2 text-[11px] bg-teal-500/20 text-teal-300 rounded-full">0</span>
-      </button>
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+      <div class="inline-flex p-1.5 rounded-2xl bg-[#0b111e] border border-[#19253d] w-full sm:w-[380px] shadow-inner">
+        <!-- Receive Tab -->
+        <button id="tabReceiveBtn" onclick="switchTab('receive')" class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-medium transition-all text-slate-400 hover:text-slate-200 border border-transparent">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3"></path>
+          </svg>
+          <span>รับไฟล์ (ดูรหัส)</span>
+          <span id="receiveBadge" class="hidden ml-1 px-1.5 py-0.2 text-[11px] bg-blue-500/30 text-blue-200 border border-blue-400/40 rounded-full">0</span>
+        </button>
 
-      <!-- Send Tab (Active by Default as in Screenshot) -->
-      <button id="tabSendBtn" onclick="switchTab('send')" class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-medium transition-all bg-[#0d2e33] text-[#2dd4bf] border border-[#134e56]/80 shadow-sm">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M16 8l-4-4m0 0L8 8m4-4v12"></path>
-        </svg>
-        <span>ส่งไฟล์</span>
-      </button>
+        <!-- Send Tab (Active by Default) -->
+        <button id="tabSendBtn" onclick="switchTab('send')" class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-medium transition-all bg-[#102447] text-[#60a5fa] border border-[#1d4ed8]/80 shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M16 8l-4-4m0 0L8 8m4-4v12"></path>
+          </svg>
+          <span>ส่งไฟล์</span>
+        </button>
+      </div>
+
+      <!-- Active Peer Connection Pill (Visible when connected) -->
+      <div id="globalConnectionBar" class="hidden items-center gap-3 px-4 py-2 rounded-xl bg-blue-950/60 border border-blue-500/40 text-xs text-blue-200">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        <span id="globalConnectionText">เชื่อมต่อกับเครื่องปลายทางแล้ว</span>
+        <button onclick="disconnectTarget()" class="ml-2 text-rose-400 hover:text-rose-300 underline font-medium">ยกเลิก</button>
+      </div>
     </div>
 
     <!-- ========================================== -->
@@ -187,11 +215,11 @@
     <div id="viewSend" class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
       
       <!-- Left Column: Sent Items Card (7 cols on lg) -->
-      <div class="lg:col-span-7 bg-[#101318] border border-[#1d222b] rounded-2xl overflow-hidden flex flex-col min-h-[540px]">
+      <div class="lg:col-span-7 bg-[#0b111e] border border-[#19253d] rounded-2xl overflow-hidden flex flex-col min-h-[550px] shadow-xl shadow-black/20">
         <!-- Card Header -->
-        <div class="px-5 py-4 border-b border-[#1a1f28] flex items-center justify-between">
+        <div class="px-5 py-4 border-b border-[#162036] flex items-center justify-between">
           <div class="flex items-center gap-3.5">
-            <div class="w-10 h-10 rounded-xl bg-[#0d2e33] border border-[#134e56]/60 flex items-center justify-center text-[#2dd4bf]">
+            <div class="w-10 h-10 rounded-xl bg-[#102447] border border-[#1d4ed8]/60 flex items-center justify-center text-[#60a5fa]">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18 M4 4h16"></path>
               </svg>
@@ -212,16 +240,20 @@
         <div class="flex-1 flex flex-col p-5">
           <!-- Empty State -->
           <div id="sentEmptyState" class="my-auto py-16 text-center max-w-md mx-auto">
-            <p class="text-[13.5px] text-slate-400 leading-relaxed mb-1.5">
-              ไฟล์และข้อความที่ส่งจะขึ้นที่นี่ พร้อมความคืบหน้าของแต่ละรายการ
+            <div class="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mx-auto mb-3 text-2xl">
+              📲
+            </div>
+            <p class="text-[14px] text-slate-300 font-medium leading-relaxed mb-1.5">
+              ไฟล์และข้อความที่ส่งจะขึ้นที่นี่ พร้อมความคืบหน้าแบบเรียลไทม์
             </p>
-            <p class="text-[13px] text-slate-500 leading-relaxed">
-              ลากไฟล์มาวางตรงไหนของหน้าก็ได้ หรือพิมพ์ข้อความแล้วกดส่ง
+            <p class="text-[12.5px] text-slate-500 leading-relaxed">
+              ลากไฟล์มาวางตรงไหนของหน้าก็ได้ หรือพิมพ์ข้อความแล้วกดส่ง<br/>
+              รองรับการส่งข้ามเครื่องผ่าน Wi-Fi และอินเทอร์เน็ตด้วย WebRTC
             </p>
           </div>
 
           <!-- Sent Items List Container -->
-          <div id="sentItemsList" class="hidden space-y-3 overflow-y-auto max-h-[440px] pr-1"></div>
+          <div id="sentItemsList" class="hidden space-y-3 overflow-y-auto max-h-[450px] pr-1"></div>
         </div>
       </div>
 
@@ -229,101 +261,107 @@
       <div class="lg:col-span-5 flex flex-col gap-5">
         
         <!-- Step 1 Card: เลือกเครื่องที่จะส่งไป -->
-        <div class="bg-[#101318] border border-[#1d222b] rounded-2xl p-5">
+        <div class="bg-[#0b111e] border border-[#19253d] rounded-2xl p-5 shadow-xl shadow-black/20">
           <div class="flex items-center justify-between mb-1.5">
             <div class="flex items-center gap-2.5">
-              <span class="w-6 h-6 rounded-full bg-[#0096c7] text-white text-xs font-bold flex items-center justify-center shadow-sm">1</span>
+              <span class="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white text-xs font-bold flex items-center justify-center shadow-sm">1</span>
               <h3 class="text-[15px] font-semibold text-white">เลือกเครื่องที่จะส่งไป</h3>
             </div>
-            <!-- Quick Demo Fill Button for smooth testing -->
-            <button onclick="fillDemoCode()" class="text-[11px] px-2.5 py-1 rounded-lg bg-[#161b24] hover:bg-[#1e2633] text-cyan-400 border border-cyan-500/20 transition-all flex items-center gap-1" title="คลิกเพื่อจำลองรหัสเครื่องปลายทางและทดสอบส่งได้ทันที">
-              <span>⚡ ทดลองรหัส</span>
-            </button>
+            <div class="flex items-center gap-1.5">
+              <!-- Camera QR Scan Button -->
+              <button onclick="openQrScannerModal()" class="text-[11px] px-2.5 py-1 rounded-lg bg-[#101c33] hover:bg-[#172847] text-blue-300 border border-blue-500/30 transition-all flex items-center gap-1" title="สแกน QR Code จากเครื่องปลายทาง">
+                <span>📷 สแกน QR</span>
+              </button>
+              <!-- Demo Loopback Fill Button -->
+              <button onclick="fillDemoCode()" class="text-[11px] px-2.5 py-1 rounded-lg bg-[#101c33] hover:bg-[#172847] text-blue-400 border border-blue-500/25 transition-all flex items-center gap-1" title="ทดสอบส่งเข้าเครื่องตัวเองได้ทันที">
+                <span>⚡ ทดสอบในเครื่องนี้</span>
+              </button>
+            </div>
           </div>
           
           <p class="text-xs text-slate-400 mb-4">
-            ใส่รหัส 6 ตัวที่แสดงบนเครื่องนั้น หรือสแกน QR ด้วยกล้องมือถือ
+            ใส่รหัสตัวเลข 6 หลักที่แสดงในแท็บ <strong class="text-blue-400">"รับไฟล์"</strong> ของอีกเครื่อง หรือสแกน QR
           </p>
 
           <!-- 6-Digit PIN Boxes -->
           <div class="grid grid-cols-6 gap-2 sm:gap-2.5" id="pinInputsContainer">
-            <input type="text" maxlength="1" data-index="0" class="pin-input w-full h-14 rounded-xl bg-[#0c0e12] border border-[#1d222b] text-center text-lg font-semibold text-white uppercase" autocomplete="off" inputmode="text" />
-            <input type="text" maxlength="1" data-index="1" class="pin-input w-full h-14 rounded-xl bg-[#0c0e12] border border-[#1d222b] text-center text-lg font-semibold text-white uppercase" autocomplete="off" inputmode="text" />
-            <input type="text" maxlength="1" data-index="2" class="pin-input w-full h-14 rounded-xl bg-[#0c0e12] border border-[#1d222b] text-center text-lg font-semibold text-white uppercase" autocomplete="off" inputmode="text" />
-            <input type="text" maxlength="1" data-index="3" class="pin-input w-full h-14 rounded-xl bg-[#0c0e12] border border-[#1d222b] text-center text-lg font-semibold text-white uppercase" autocomplete="off" inputmode="text" />
-            <input type="text" maxlength="1" data-index="4" class="pin-input w-full h-14 rounded-xl bg-[#0c0e12] border border-[#1d222b] text-center text-lg font-semibold text-white uppercase" autocomplete="off" inputmode="text" />
-            <input type="text" maxlength="1" data-index="5" class="pin-input w-full h-14 rounded-xl bg-[#0c0e12] border border-[#1d222b] text-center text-lg font-semibold text-white uppercase" autocomplete="off" inputmode="text" />
+            <input type="text" maxlength="1" data-index="0" class="pin-input w-full h-14 rounded-xl bg-[#070c16] border border-[#1e2d4a] text-center text-lg font-bold text-white uppercase" autocomplete="off" inputmode="numeric" />
+            <input type="text" maxlength="1" data-index="1" class="pin-input w-full h-14 rounded-xl bg-[#070c16] border border-[#1e2d4a] text-center text-lg font-bold text-white uppercase" autocomplete="off" inputmode="numeric" />
+            <input type="text" maxlength="1" data-index="2" class="pin-input w-full h-14 rounded-xl bg-[#070c16] border border-[#1e2d4a] text-center text-lg font-bold text-white uppercase" autocomplete="off" inputmode="numeric" />
+            <input type="text" maxlength="1" data-index="3" class="pin-input w-full h-14 rounded-xl bg-[#070c16] border border-[#1e2d4a] text-center text-lg font-bold text-white uppercase" autocomplete="off" inputmode="numeric" />
+            <input type="text" maxlength="1" data-index="4" class="pin-input w-full h-14 rounded-xl bg-[#070c16] border border-[#1e2d4a] text-center text-lg font-bold text-white uppercase" autocomplete="off" inputmode="numeric" />
+            <input type="text" maxlength="1" data-index="5" class="pin-input w-full h-14 rounded-xl bg-[#070c16] border border-[#1e2d4a] text-center text-lg font-bold text-white uppercase" autocomplete="off" inputmode="numeric" />
           </div>
 
-          <!-- Connected Banner (Hidden until 6 digits entered) -->
-          <div id="connectedBanner" class="hidden mt-3.5 px-3.5 py-2.5 rounded-xl bg-teal-500/10 border border-teal-500/25 flex items-center justify-between">
-            <div class="flex items-center gap-2 text-xs text-teal-300">
-              <span class="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span>
+          <!-- Connection Progress / Status Banner -->
+          <div id="connectedBanner" class="hidden mt-3.5 px-3.5 py-2.5 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-between">
+            <div class="flex items-center gap-2 text-xs text-blue-300">
+              <span id="bannerDot" class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
               <span id="connectedBannerText">เชื่อมต่อกับเครื่องปลายทางแล้ว พร้อมส่ง!</span>
             </div>
-            <button onclick="disconnectTarget()" class="text-[11px] text-slate-400 hover:text-white underline">เปลี่ยนเครื่อง</button>
+            <button onclick="disconnectTarget()" class="text-[11px] text-slate-400 hover:text-white underline shrink-0 ml-2">เปลี่ยนเครื่อง</button>
           </div>
         </div>
 
-        <!-- Step 2 Section Header (Outside Card, matching screenshot) -->
+        <!-- Step 2 Section Header -->
         <div class="flex items-center gap-2.5 px-1 -mb-1.5">
-          <span id="step2Badge" class="w-6 h-6 rounded-full bg-[#262b36] text-slate-400 text-xs font-bold flex items-center justify-center transition-colors">2</span>
+          <span id="step2Badge" class="w-6 h-6 rounded-full bg-[#19253d] text-slate-400 text-xs font-bold flex items-center justify-center transition-colors">2</span>
           <h3 id="step2Title" class="text-[14px] font-semibold text-slate-400 transition-colors">เลือกไฟล์หรือพิมพ์ข้อความ</h3>
         </div>
 
         <!-- Dropzone Card -->
-        <div id="dropZoneCard" onclick="triggerFileSelect()" class="bg-[#101318] border border-[#1d222b] hover:border-[#2a3241] rounded-2xl p-7 text-center cursor-pointer transition-all group select-none">
+        <div id="dropZoneCard" onclick="triggerFileSelect()" class="bg-[#0b111e] border border-[#19253d] hover:border-blue-500/60 hover:bg-[#0e1729] rounded-2xl p-7 text-center cursor-pointer transition-all group select-none shadow-xl shadow-black/20">
           <input type="file" id="fileInput" multiple class="hidden" onchange="handleFileSelect(event)" />
           
-          <!-- Cute Smiling Water Droplet SVG Mascot -->
+          <!-- Cute Royal Blue Mascot SVG + 📲 Theme -->
           <div class="w-20 h-24 mx-auto mb-3 flex items-center justify-center mascot-float">
-            <svg viewBox="0 0 100 120" class="w-16 h-20 drop-shadow-md">
-              <!-- Outer darker teal layer -->
-              <path d="M50 10 C50 10 15 57 15 83 C15 103 31 114 50 114 C69 114 85 103 85 83 C85 57 50 10 50 10 Z" fill="#135d66" />
-              <!-- Inner lighter teal body -->
-              <path d="M50 14 C50 14 20 57 20 82 C20 100 34 110 50 110 C66 110 80 100 80 82 C80 57 50 14 50 14 Z" fill="#1b7f8c" />
+            <svg viewBox="0 0 100 120" class="w-16 h-20 drop-shadow-[0_8px_16px_rgba(37,99,235,0.35)]">
+              <!-- Outer Royal Blue layer -->
+              <path d="M50 10 C50 10 15 57 15 83 C15 103 31 114 50 114 C69 114 85 103 85 83 C85 57 50 10 50 10 Z" fill="#1d4ed8" />
+              <!-- Inner Sapphire Blue body -->
+              <path d="M50 14 C50 14 20 57 20 82 C20 100 34 110 50 110 C66 110 80 100 80 82 C80 57 50 14 50 14 Z" fill="#3b82f6" />
               <!-- Water shine highlight -->
-              <ellipse cx="34" cy="64" rx="5.5" ry="10.5" transform="rotate(21 34 64)" fill="#4ea8b4" opacity="0.55"/>
+              <ellipse cx="34" cy="64" rx="5.5" ry="10.5" transform="rotate(21 34 64)" fill="#93c5fd" opacity="0.65"/>
               <!-- Cute Eyes -->
-              <circle cx="38" cy="83" r="4.3" fill="#090d14"/>
-              <circle cx="62" cy="83" r="4.3" fill="#090d14"/>
+              <circle cx="38" cy="83" r="4.3" fill="#060a12"/>
+              <circle cx="62" cy="83" r="4.3" fill="#060a12"/>
               <!-- Eye sparkles -->
-              <circle cx="36.5" cy="81.3" r="1.5" fill="#cbd5e1"/>
-              <circle cx="60.5" cy="81.3" r="1.5" fill="#cbd5e1"/>
-              <!-- Rosy Cheeks -->
-              <ellipse cx="31" cy="89" rx="4.2" ry="2.3" fill="#9f4258" opacity="0.65"/>
-              <ellipse cx="69" cy="89" rx="4.2" ry="2.3" fill="#9f4258" opacity="0.65"/>
-              <!-- Smile -->
-              <path d="M45 89.5 Q50 95 55 89.5" stroke="#090d14" stroke-width="2.8" stroke-linecap="round" fill="none"/>
+              <circle cx="36.5" cy="81.3" r="1.6" fill="#ffffff"/>
+              <circle cx="60.5" cy="81.3" r="1.6" fill="#ffffff"/>
+              <!-- Cheeks -->
+              <ellipse cx="31" cy="89" rx="4.2" ry="2.3" fill="#f43f5e" opacity="0.55"/>
+              <ellipse cx="69" cy="89" rx="4.2" ry="2.3" fill="#f43f5e" opacity="0.55"/>
+              <!-- Happy Smile -->
+              <path d="M44.5 89.5 Q50 95.5 55.5 89.5" stroke="#060a12" stroke-width="2.8" stroke-linecap="round" fill="none"/>
             </svg>
           </div>
 
-          <p class="text-[14.5px] font-semibold text-slate-300 group-hover:text-white transition-colors mb-1">
+          <p class="text-[15px] font-semibold text-slate-200 group-hover:text-blue-300 transition-colors mb-1">
             ลากไฟล์มาวางที่นี่
           </p>
-          <p class="text-xs text-slate-500">
-            หรือคลิกเพื่อเลือก · กด Ctrl/⌘ +V วางไฟล์ที่ก๊อปไว้ก็ได้
+          <p class="text-xs text-slate-400">
+            หรือคลิกเพื่อเลือกไฟล์ · กด <kbd class="px-1.5 py-0.5 rounded bg-[#131d31] text-blue-300 border border-[#223354]">Ctrl/⌘ + V</kbd> วางไฟล์หรือรูปที่ก๊อปไว้ก็ได้
           </p>
         </div>
 
         <!-- Text Snippet Input Card -->
-        <div class="bg-[#101318] border border-[#1d222b] rounded-2xl p-3.5">
+        <div class="bg-[#0b111e] border border-[#19253d] rounded-2xl p-3.5 shadow-xl shadow-black/20">
           <div class="relative">
             <textarea
               id="textMessageInput"
               rows="3"
               placeholder="พิมพ์หรือวางข้อความ ลิงก์ โค้ด... ปลายทางคัดลอกให้เลย"
-              class="w-full rounded-xl bg-[#0c0e12] border border-[#1a1f28] focus:border-[#00a8cc] focus:outline-none p-3.5 text-sm text-slate-200 placeholder-slate-500 resize-none transition-colors"
+              class="w-full rounded-xl bg-[#070c16] border border-[#19253d] focus:border-blue-500 focus:outline-none p-3.5 text-sm text-slate-200 placeholder-slate-500 resize-none transition-colors"
               onkeydown="handleTextareaKey(event)"
             ></textarea>
           </div>
           <div class="flex items-center justify-between mt-2.5 px-1">
-            <span class="text-[11px] text-slate-500">กด <kbd class="px-1.5 py-0.5 rounded bg-[#181c24] text-slate-400 border border-[#252b37]">Ctrl + Enter</kbd> เพื่อส่งทันที</span>
+            <span class="text-[11px] text-slate-500">กด <kbd class="px-1.5 py-0.5 rounded bg-[#131d31] text-slate-300 border border-[#223354]">Ctrl + Enter</kbd> เพื่อส่งทันที</span>
             <button
               onclick="sendTextSnippet()"
-              class="px-4 py-1.5 rounded-xl bg-[#0d2e33] hover:bg-[#123e45] text-[#2dd4bf] border border-[#134e56] text-xs font-medium transition-all flex items-center gap-1.5"
+              class="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-xs font-semibold shadow-md shadow-blue-600/20 transition-all flex items-center gap-1.5"
             >
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
               </svg>
               <span>ส่งข้อความ</span>
@@ -340,23 +378,23 @@
     <div id="viewReceive" class="hidden grid-cols-1 lg:grid-cols-12 gap-5 items-start">
       
       <!-- Left Column: Received Items Card (7 cols on lg) -->
-      <div class="lg:col-span-7 bg-[#101318] border border-[#1d222b] rounded-2xl overflow-hidden flex flex-col min-h-[540px]">
-        <div class="px-5 py-4 border-b border-[#1a1f28] flex items-center justify-between">
+      <div class="lg:col-span-7 bg-[#0b111e] border border-[#19253d] rounded-2xl overflow-hidden flex flex-col min-h-[550px] shadow-xl shadow-black/20">
+        <div class="px-5 py-4 border-b border-[#162036] flex items-center justify-between">
           <div class="flex items-center gap-3.5">
-            <div class="w-10 h-10 rounded-xl bg-[#0d2e33] border border-[#134e56]/60 flex items-center justify-center text-[#2dd4bf]">
+            <div class="w-10 h-10 rounded-xl bg-[#102447] border border-[#1d4ed8]/60 flex items-center justify-center text-[#60a5fa]">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3"></path>
               </svg>
             </div>
             <div>
-              <h2 class="text-[15px] font-semibold text-white leading-snug">รายการที่รับ</h2>
-              <p class="text-xs text-slate-400 mt-0.5">พร้อมรับไฟล์และข้อความจากเครื่องต้นทาง</p>
+              <h2 class="text-[15px] font-semibold text-white leading-snug">รายการที่ได้รับ</h2>
+              <p id="receiverStatusSubtitle" class="text-xs text-slate-400 mt-0.5">รอรับไฟล์และข้อความจากเครื่องต้นทางแบบเรียลไทม์</p>
             </div>
           </div>
 
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2.5">
             <span id="receivedCountLabel" class="text-xs text-slate-400">ยังไม่มีรายการ</span>
-            <button onclick="simulateIncomingItem()" class="text-[11px] px-2.5 py-1 rounded-lg bg-[#161b24] hover:bg-[#1e2633] text-teal-400 border border-teal-500/20 transition-all">
+            <button onclick="simulateIncomingItem()" class="text-[11px] px-2.5 py-1 rounded-lg bg-[#101c33] hover:bg-[#172847] text-blue-400 border border-blue-500/30 transition-all">
               + จำลองรับไฟล์
             </button>
           </div>
@@ -365,36 +403,39 @@
         <!-- Received Items Body -->
         <div class="flex-1 flex flex-col p-5">
           <div id="receivedEmptyState" class="my-auto py-16 text-center max-w-md mx-auto">
-            <p class="text-[13.5px] text-slate-400 leading-relaxed mb-1.5">
-              ไฟล์และข้อความที่ส่งมาหาเครื่องนี้จะแสดงที่นี่โดยอัตโนมัติ
+            <div class="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mx-auto mb-3 text-2xl">
+              📥
+            </div>
+            <p class="text-[14px] text-slate-300 font-medium leading-relaxed mb-1.5">
+              ไฟล์และข้อความที่ส่งมาหาเครื่องนี้จะเด้งขึ้นมาโดยอัตโนมัติ
             </p>
-            <p class="text-[13px] text-slate-500 leading-relaxed">
-              นำรหัส 6 หลักทางด้านขวาไปกรอกที่หน้า "ส่งไฟล์" ของอีกเครื่องได้เลย
+            <p class="text-[12.5px] text-slate-500 leading-relaxed">
+              นำรหัส 6 หลักทางด้านขวาไปกรอกในหน้า "ส่งไฟล์" ของอีกเครื่อง<br/>หรือใช้กล้องมือถือสแกน QR Code เพื่อจับคู่ทันที
             </p>
           </div>
 
-          <div id="receivedItemsList" class="hidden space-y-3 overflow-y-auto max-h-[440px] pr-1"></div>
+          <div id="receivedItemsList" class="hidden space-y-3 overflow-y-auto max-h-[450px] pr-1"></div>
         </div>
       </div>
 
-      <!-- Right Column: My Device Code & QR (5 cols on lg) -->
+      <!-- Right Column: My Device Code & Real Scannable QR (5 cols on lg) -->
       <div class="lg:col-span-5 flex flex-col gap-5">
-        <div class="bg-[#101318] border border-[#1d222b] rounded-2xl p-5">
+        <div class="bg-[#0b111e] border border-[#19253d] rounded-2xl p-5 shadow-xl shadow-black/20">
           <div class="flex items-center justify-between mb-1.5">
             <div class="flex items-center gap-2.5">
-              <span class="w-6 h-6 rounded-full bg-[#0096c7] text-white text-xs font-bold flex items-center justify-center">R</span>
-              <h3 class="text-[15px] font-semibold text-white">รหัสประจำเครื่องนี้</h3>
+              <span class="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white text-xs font-bold flex items-center justify-center">📲</span>
+              <h3 class="text-[15px] font-semibold text-white">รหัสประจำเครื่องนี้ (สำหรับรับไฟล์)</h3>
             </div>
-            <button onclick="regenerateMyCode()" class="text-xs text-slate-400 hover:text-cyan-400 flex items-center gap-1 transition-colors" title="สุ่มรหัสใหม่">
+            <button onclick="regenerateMyCode()" class="text-xs text-slate-400 hover:text-blue-400 flex items-center gap-1 transition-colors" title="เปลี่ยนรหัสเครื่องใหม่">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
               </svg>
-              <span>สุ่มใหม่</span>
+              <span>เปลี่ยนรหัส</span>
             </button>
           </div>
 
           <p class="text-xs text-slate-400 mb-4">
-            นำรหัส 6 หลักนี้ไปกรอกในช่อง "เลือกเครื่องที่จะส่งไป" บนเครื่องต้นทาง
+            เปิดเว็บนี้บนอีกเครื่อง แล้วนำรหัส 6 หลักนี้ไปกรอกในช่อง "เลือกเครื่องที่จะส่งไป"
           </p>
 
           <!-- Display 6-Digit Code Boxes -->
@@ -402,27 +443,29 @@
             <!-- Populated by JS -->
           </div>
 
-          <div class="flex gap-2">
-            <button onclick="copyMyCode()" class="flex-1 py-2.5 px-4 rounded-xl bg-[#0d2e33] hover:bg-[#123e45] text-[#2dd4bf] border border-[#134e56] text-xs font-medium transition-all flex items-center justify-center gap-2">
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="copyMyCode()" class="py-2.5 px-3 rounded-xl bg-[#102447] hover:bg-[#163263] text-[#60a5fa] border border-[#1d4ed8]/70 text-xs font-medium transition-all flex items-center justify-center gap-1.5">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                 <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
               </svg>
-              <span>คัดลอกรหัสเครื่อง</span>
+              <span>คัดลอกรหัส 6 หลัก</span>
             </button>
-            <button onclick="useMyCodeInSendTab()" class="py-2.5 px-3.5 rounded-xl bg-[#161b24] hover:bg-[#1f2633] text-slate-300 border border-[#232a38] text-xs transition-all" title="ส่งเข้าเครื่องตัวเองเพื่อทดสอบ">
-              ทดสอบส่งเข้าเครื่องนี้
+            <button onclick="copyInviteLink()" class="py-2.5 px-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-xs font-medium transition-all flex items-center justify-center gap-1.5 shadow-md shadow-blue-600/20">
+              <span>🔗 คัดลอกลิงก์จับคู่</span>
             </button>
           </div>
         </div>
 
-        <!-- QR Code Card -->
-        <div class="bg-[#101318] border border-[#1d222b] rounded-2xl p-5 flex flex-col items-center text-center">
-          <div class="bg-white p-3 rounded-2xl mb-3 shadow-md">
-            <canvas id="qrCanvas" width="148" height="148" class="rounded-lg"></canvas>
+        <!-- Real QR Code Card -->
+        <div class="bg-[#0b111e] border border-[#19253d] rounded-2xl p-5 flex flex-col items-center text-center shadow-xl shadow-black/20">
+          <div class="bg-white p-3.5 rounded-2xl mb-3 shadow-lg shadow-blue-500/10">
+            <div id="qrcodeContainer" class="w-[156px] h-[156px] flex items-center justify-center"></div>
           </div>
-          <p class="text-xs font-medium text-slate-300 mb-0.5">สแกน QR เพื่อจับคู่อัตโนมัติ</p>
-          <p class="text-[11px] text-slate-500">เปิดหน้าเว็บนี้ในอีกแท็บเพื่อทดสอบส่งข้ามหน้าจอได้จริง</p>
+          <p class="text-xs font-semibold text-slate-200 mb-1">สแกน QR ด้วยกล้องมือถือเพื่อเชื่อมต่อทันที</p>
+          <p class="text-[11px] text-slate-400 max-w-xs leading-relaxed">
+            เมื่อสแกนแล้ว มือถือจะเปิดหน้าเว็บพร้อมกรอกรหัส <span id="qrCodeHintText" class="text-blue-400 font-mono font-semibold">------</span> ให้อัตโนมัติ
+          </p>
         </div>
       </div>
 
@@ -434,125 +477,480 @@
   <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- ========================================== -->
-  <!-- MODALS (Help, Coffee, Settings)            -->
+  <!-- MODALS (QR Scanner, GitHub Guide, Help, Settings) -->
   <!-- ========================================== -->
-  
-  <!-- Help Modal -->
-  <div id="helpModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-    <div class="bg-[#101318] border border-[#1d222b] rounded-2xl max-w-md w-full p-6 shadow-2xl">
-      <div class="flex items-center justify-between mb-4">
+
+  <!-- Camera QR Scanner Modal -->
+  <div id="qrScannerModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+    <div class="bg-[#0b111e] border border-[#19253d] rounded-2xl max-w-md w-full p-5 shadow-2xl">
+      <div class="flex items-center justify-between mb-3">
         <h3 class="text-base font-bold text-white flex items-center gap-2">
-          <span class="w-6 h-6 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs">?</span>
-          วิธีใช้งาน TP Drop
+          <span>📷 สแกน QR Code เครื่องปลายทาง</span>
         </h3>
-        <button onclick="closeModal('helpModal')" class="text-slate-400 hover:text-white">✕</button>
+        <button onclick="closeQrScannerModal()" class="text-slate-400 hover:text-white">✕</button>
       </div>
-      <div class="space-y-3 text-xs text-slate-300 leading-relaxed">
-        <div class="p-3 rounded-xl bg-[#0c0e12] border border-[#1a1f28]">
-          <p class="font-semibold text-teal-400 mb-1">1. เลือกเครื่องปลายทาง</p>
-          <p class="text-slate-400">เปิดแท็บ <b>"รับไฟล์"</b> บนเครื่องปลายทางเพื่อดูรหัส 6 หลัก แล้วนำมากรอกในช่องรหัสของเครื่องที่จะส่ง (หรือกดปุ่ม <b>⚡ ทดลองรหัส</b> เพื่อทดสอบทันที)</p>
-        </div>
-        <div class="p-3 rounded-xl bg-[#0c0e12] border border-[#1a1f28]">
-          <p class="font-semibold text-teal-400 mb-1">2. ส่งไฟล์หรือข้อความ</p>
-          <p class="text-slate-400">ลากไฟล์มาวางตรงไหนของหน้าก็ได้, คลิกเลือกไฟล์, กด <b>Ctrl+V</b> เพื่อวางรูป/ไฟล์จากคลิปบอร์ด หรือพิมพ์ข้อความ/ลิงก์/โค้ดแล้วกดส่ง</p>
-        </div>
-        <div class="p-3 rounded-xl bg-[#0c0e12] border border-[#1a1f28]">
-          <p class="font-semibold text-teal-400 mb-1">💡 ทดสอบข้ามแท็บได้จริง!</p>
-          <p class="text-slate-400">คุณสามารถเปิดหน้านี้ซ้ำอีก 1 แท็บ แท็บแรกเปิดหน้า <b>รับไฟล์</b> และอีกแท็บเปิดหน้า <b>ส่งไฟล์</b> แล้วใส่รหัสเดียวกัน ไฟล์และข้อความจะวิ่งข้ามแท็บแบบเรียลไทม์</p>
-        </div>
+      <p class="text-xs text-slate-400 mb-3">
+        หันกล้องไปที่ QR Code ในแท็บ "รับไฟล์" ของอีกเครื่อง
+      </p>
+      <div id="qrReaderBox" class="w-full rounded-xl overflow-hidden bg-black border border-[#19253d] min-h-[240px] flex items-center justify-center text-xs text-slate-500">
+        กำลังเปิดกล้อง...
       </div>
-      <button onclick="closeModal('helpModal')" class="mt-5 w-full py-2.5 rounded-xl bg-[#0d2e33] hover:bg-[#123e45] text-[#2dd4bf] border border-[#134e56] text-xs font-semibold transition-all">
-        เข้าใจแล้ว
+      <button onclick="closeQrScannerModal()" class="mt-4 w-full py-2.5 rounded-xl bg-[#131e36] hover:bg-[#1a2947] text-slate-300 border border-[#24355a] text-xs font-semibold transition-all">
+        ปิดกล้อง
       </button>
     </div>
   </div>
 
-  <!-- Coffee Modal -->
-  <div id="coffeeModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-    <div class="bg-[#101318] border border-[#1d222b] rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl">
-      <div class="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto mb-3">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zm4-6v2m4-2v2m4-2v2"></path>
-        </svg>
+  <!-- GitHub Pages & Cross-Device Guide Modal -->
+  <div id="githubModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div class="bg-[#0b111e] border border-[#19253d] rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <span class="text-lg">🚀</span>
+          ทำไมก่อนหน้านี้เชื่อมต่อไม่ได้ & วิธีใช้งานบน GitHub Pages
+        </h3>
+        <button onclick="closeModal('githubModal')" class="text-slate-400 hover:text-white">✕</button>
       </div>
-      <h3 class="text-base font-bold text-white mb-1">เลี้ยงกาแฟผู้พัฒนา ☕</h3>
-      <p class="text-xs text-slate-400 mb-4 leading-relaxed">
-        ขอบคุณที่ใช้งาน TP Drop! ระบบรับ-ส่งไฟล์รวดเร็ว ปลอดภัย และใช้งานฟรี
-      </p>
-      <button onclick="closeModal('coffeeModal'); showToast('ขอบคุณสำหรับกำลังใจครับ! ❤️', 'success')" class="w-full py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-semibold transition-all">
-        ส่งกำลังใจให้ทีมพัฒนา
+      <div class="space-y-3 text-xs text-slate-300 leading-relaxed max-h-[65vh] overflow-y-auto pr-1">
+        <div class="p-3.5 rounded-xl bg-blue-950/40 border border-blue-500/30">
+          <p class="font-semibold text-blue-300 mb-1">✅ แก้ไขระบบเชื่อมต่อข้ามเครื่องเรียบร้อยแล้ว!</p>
+          <p class="text-slate-300">
+            เวอร์ชันเดิมใช้เพียง <code class="text-blue-300">BroadcastChannel</code> ซึ่งทำงานได้เฉพาะในเบราว์เซอร์เดียวกัน แต่ใน <b>TP Drop</b> เวอร์ชันนี้ได้ติดตั้ง <b>PeerJS (WebRTC DataChannel)</b> พร้อม STUN Server ของ Google ทำให้คอมพิวเตอร์และมือถือที่เปิดเว็บผ่าน Wi-Fi หรือเน็ตมือถือสามารถส่งไฟล์หากันได้จริงโดยไม่ต้องตั้งเซิร์ฟเวอร์หลังบ้านเอง
+          </p>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-[#070c16] border border-[#162036]">
+          <p class="font-semibold text-blue-400 mb-1.5">📦 วิธีนำไฟล์นี้ไปเปิดใช้งานบน GitHub Pages ฟรี:</p>
+          <ol class="list-decimal list-inside space-y-1.5 text-slate-300">
+            <li>สร้าง Repository ใหม่บน GitHub (ตั้งเป็น Public)</li>
+            <li>อัปโหลดไฟล์นี้โดยตั้งชื่อว่า <code class="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300">index.html</code></li>
+            <li>ไปที่เมนู <b>Settings → Pages</b> ของ Repository</li>
+            <li>ตรงหัวข้อ <b>Branch</b> เลือก <code class="text-blue-300">main</code> แล้วกด <b>Save</b></li>
+            <li>รอประมาณ 1 นาที คุณจะได้ลิงก์ <code class="text-blue-300">https://ชื่อคุณ.github.io/ชื่อโปรเจกต์/</code> สามารถเปิดใช้งานได้ทั้งบนคอมและมือถือทันที!</li>
+          </ol>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-[#070c16] border border-[#162036]">
+          <p class="font-semibold text-blue-400 mb-1">💡 เคล็ดลับการเชื่อมต่อที่รวดเร็วที่สุด:</p>
+          <p class="text-slate-400">
+            เมื่อนำขึ้น GitHub Pages แล้ว ให้เปิดหน้า <b>"รับไฟล์"</b> บนคอมพิวเตอร์ แล้วใช้กล้องมือถือสแกน QR Code บนหน้าจอ มือถือจะเปิดลิงก์พร้อมจับคู่ให้อัตโนมัติโดยไม่ต้องพิมพ์รหัสเองเลย
+          </p>
+        </div>
+      </div>
+      <button onclick="closeModal('githubModal')" class="mt-5 w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-xs font-semibold transition-all">
+        เข้าใจแล้ว เริ่มใช้งานเลย
+      </button>
+    </div>
+  </div>
+
+  <!-- Help Modal -->
+  <div id="helpModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div class="bg-[#0b111e] border border-[#19253d] rounded-2xl max-w-md w-full p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <span>📲 วิธีใช้งาน TP Drop</span>
+        </h3>
+        <button onclick="closeModal('helpModal')" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <div class="space-y-3 text-xs text-slate-300 leading-relaxed">
+        <div class="p-3 rounded-xl bg-[#070c16] border border-[#162036]">
+          <p class="font-semibold text-blue-400 mb-1">1. ดูรหัส 6 หลักที่เครื่องปลายทาง</p>
+          <p class="text-slate-400">เปิดเว็บ TP Drop บนเครื่องที่ต้องการรับไฟล์ กดแท็บ <b>"รับไฟล์ (ดูรหัส)"</b> จะเห็นรหัสตัวเลข 6 หลัก และ QR Code</p>
+        </div>
+        <div class="p-3 rounded-xl bg-[#070c16] border border-[#162036]">
+          <p class="font-semibold text-blue-400 mb-1">2. กรอกรหัสหรือสแกน QR เพื่อจับคู่</p>
+          <p class="text-slate-400">ในเครื่องส่ง ให้นำรหัส 6 หลักมากรอก ระบบจะเชื่อมต่อผ่าน WebRTC P2P ข้ามเครื่องให้ทันที (ไฟสถานะด้านบนจะเปลี่ยนเป็นสีเขียว)</p>
+        </div>
+        <div class="p-3 rounded-xl bg-[#070c16] border border-[#162036]">
+          <p class="font-semibold text-blue-400 mb-1">3. ส่งได้ทั้งสองทาง (Bi-directional)</p>
+          <p class="text-slate-400">เมื่อจับคู่กันแล้ว ทั้งสองเครื่องสามารถลากไฟล์วาง กด Ctrl+V วางรูปภาพ หรือส่งข้อความหากันได้ทันที</p>
+        </div>
+      </div>
+      <button onclick="closeModal('helpModal')" class="mt-5 w-full py-2.5 rounded-xl bg-[#102447] hover:bg-[#163263] text-[#60a5fa] border border-[#1d4ed8] text-xs font-semibold transition-all">
+        ตกลง
       </button>
     </div>
   </div>
 
   <!-- Settings Modal -->
-  <div id="settingsModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-    <div class="bg-[#101318] border border-[#1d222b] rounded-2xl max-w-md w-full p-6 shadow-2xl">
+  <div id="settingsModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div class="bg-[#0b111e] border border-[#19253d] rounded-2xl max-w-md w-full p-6 shadow-2xl">
       <div class="flex items-center justify-between mb-4">
-        <h3 class="text-base font-bold text-white">ตั้งค่าระบบ</h3>
+        <h3 class="text-base font-bold text-white">ตั้งค่าระบบ TP Drop</h3>
         <button onclick="closeModal('settingsModal')" class="text-slate-400 hover:text-white">✕</button>
       </div>
-      <div class="space-y-4 text-xs">
-        <div class="flex items-center justify-between p-3 rounded-xl bg-[#0c0e12] border border-[#1a1f28]">
+      <div class="space-y-3.5 text-xs">
+        <div class="flex items-center justify-between p-3 rounded-xl bg-[#070c16] border border-[#162036]">
           <div>
             <p class="font-medium text-slate-200">ชื่อเครื่องของคุณ</p>
-            <p class="text-[11px] text-slate-500">แสดงให้เครื่องปลายทางเห็นเวลารับ-ส่งไฟล์</p>
+            <p class="text-[11px] text-slate-500">แสดงให้อีกเครื่องเห็นเมื่อเชื่อมต่อสำเร็จ</p>
           </div>
-          <input id="deviceNameInput" type="text" value="Dropple-PC" class="px-3 py-1.5 rounded-lg bg-[#141820] border border-[#242b38] text-white text-xs w-36 focus:outline-none focus:border-cyan-500" />
+          <input id="deviceNameInput" type="text" value="" class="px-3 py-1.5 rounded-lg bg-[#0d1629] border border-[#1e2f52] text-white text-xs w-40 focus:outline-none focus:border-blue-500" />
         </div>
 
-        <div class="flex items-center justify-between p-3 rounded-xl bg-[#0c0e12] border border-[#1a1f28]">
+        <div class="flex items-center justify-between p-3 rounded-xl bg-[#070c16] border border-[#162036]">
+          <div>
+            <p class="font-medium text-slate-200">ดาวน์โหลดไฟล์อัตโนมัติเมื่อได้รับ</p>
+            <p class="text-[11px] text-slate-500">บันทึกไฟล์ลงเครื่องทันทีเมื่อรับครบ 100%</p>
+          </div>
+          <input id="autoDownloadToggle" type="checkbox" class="w-4 h-4 accent-blue-500 rounded cursor-pointer" />
+        </div>
+
+        <div class="flex items-center justify-between p-3 rounded-xl bg-[#070c16] border border-[#162036]">
           <div>
             <p class="font-medium text-slate-200">คัดลอกข้อความอัตโนมัติ</p>
             <p class="text-[11px] text-slate-500">คัดลอกลงคลิปบอร์ดทันทีเมื่อได้รับข้อความใหม่</p>
           </div>
-          <input id="autoCopyToggle" type="checkbox" checked class="w-4 h-4 accent-teal-400 rounded cursor-pointer" />
+          <input id="autoCopyToggle" type="checkbox" checked class="w-4 h-4 accent-blue-500 rounded cursor-pointer" />
         </div>
 
-        <div class="flex items-center justify-between p-3 rounded-xl bg-[#0c0e12] border border-[#1a1f28]">
+        <div class="flex items-center justify-between p-3 rounded-xl bg-[#070c16] border border-[#162036]">
           <div>
-            <p class="font-medium text-slate-200">ส่งอัตโนมัติเมื่อยังไม่ได้ใส่รหัส</p>
-            <p class="text-[11px] text-slate-500">จำลองเครื่องปลายทางให้อัตโนมัติหากลากไฟล์มาวางเลย</p>
+            <p class="font-medium text-slate-200">สถานะเซิร์ฟเวอร์จับคู่ (PeerJS)</p>
+            <p id="peerServerDiagText" class="text-[11px] text-blue-400">พร้อมใช้งาน (0.peerjs.com + Google STUN)</p>
           </div>
-          <input id="autoDemoToggle" type="checkbox" checked class="w-4 h-4 accent-teal-400 rounded cursor-pointer" />
+          <button onclick="reconnectPeerServer()" class="px-2.5 py-1.5 rounded-lg bg-[#102447] hover:bg-[#173363] text-blue-300 border border-blue-500/30 text-[11px]">
+            รีเซ็ตสัญญาณ
+          </button>
         </div>
       </div>
-      <button onclick="saveSettings()" class="mt-5 w-full py-2.5 rounded-xl bg-[#0d2e33] hover:bg-[#123e45] text-[#2dd4bf] border border-[#134e56] text-xs font-semibold transition-all">
+      <button onclick="saveSettings()" class="mt-5 w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-xs font-semibold transition-all">
         บันทึกการตั้งค่า
       </button>
     </div>
   </div>
 
-  <!-- Application Logic -->
+  <!-- Application Logic (WebRTC PeerJS + Chunked File Transfer + QR + Local Fallback) -->
   <script>
+    const PEER_PREFIX = 'tpdrop-v2-room-';
+    const CHUNK_SIZE = 64 * 1024; // 64KB per WebRTC chunk for fast & stable transfer
+
     // --- State ---
     let currentTab = 'send';
-    let myDeviceCode = generateRandomCode();
+    let myDeviceCode = localStorage.getItem('tpdrop_my_code') || generateRandomCode();
     let targetCode = '';
     let isConnected = false;
+    let peer = null;
+    let activeConn = null;
+    let html5QrScanner = null;
+
     let sentItems = [];
     let receivedItems = [];
+    let incomingFileBuffers = {}; // fileId -> { meta, chunks: [], receivedBytes: 0 }
 
-    // Cross-tab real-time channel
-    const channel = ('BroadcastChannel' in window) ? new BroadcastChannel('dropple_p2p_channel') : null;
+    // Local same-browser fallback channel
+    const localChannel = ('BroadcastChannel' in window) ? new BroadcastChannel('tpdrop_local_channel') : null;
 
     // --- Initialization ---
     window.addEventListener('DOMContentLoaded', () => {
+      initDefaultDeviceName();
       initPinInputs();
       renderMyCodeDisplay();
-      drawDecorativeQR(myDeviceCode);
+      generateQRCode(myDeviceCode);
       initDragAndDrop();
       initClipboardPaste();
-      setupBroadcastListener();
+      setupLocalBroadcastListener();
+      initPeerJS(myDeviceCode);
+      checkUrlAutoConnect();
     });
 
-    function generateRandomCode() {
-      const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
-      let code = '';
-      for (let i = 0; i < 6; i++) {
-        code += chars.charAt(Math.floor(Math.random() * chars.length));
+    function initDefaultDeviceName() {
+      const savedName = localStorage.getItem('tpdrop_device_name');
+      const input = document.getElementById('deviceNameInput');
+      if (savedName) {
+        input.value = savedName;
+        return;
       }
+      const ua = navigator.userAgent;
+      let os = 'Device';
+      if (/Android/i.test(ua)) os = 'Android';
+      else if (/iPhone|iPad|iPod/i.test(ua)) os = 'iOS';
+      else if (/Win/i.test(ua)) os = 'Windows PC';
+      else if (/Mac/i.test(ua)) os = 'Mac';
+      else if (/Linux/i.test(ua)) os = 'Linux';
+      input.value = `TP-${os}`;
+    }
+
+    function generateRandomCode() {
+      // Use 6 numeric digits (100000 - 999999) for super easy typing on mobile & PC
+      const code = String(Math.floor(100000 + Math.random() * 900000));
+      localStorage.setItem('tpdrop_my_code', code);
       return code;
+    }
+
+    // =====================================================
+    // WEBRTC PEERJS INITIALIZATION & SIGNALING
+    // =====================================================
+    function initPeerJS(code) {
+      if (typeof Peer === 'undefined') {
+        updateHeaderStatus('offline', 'ไม่พบไลบรารี PeerJS (ทำงานโหมดออฟไลน์ในเครื่อง)');
+        return;
+      }
+
+      if (peer) {
+        try { peer.destroy(); } catch (e) {}
+      }
+
+      updateHeaderStatus('connecting', 'กำลังลงทะเบียนรหัสเครื่องบนเครือข่าย WebRTC...');
+
+      const fullPeerId = PEER_PREFIX + code;
+      peer = new Peer(fullPeerId, {
+        debug: 1,
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' }
+          ]
+        }
+      });
+
+      peer.on('open', (id) => {
+        if (!isConnected) {
+          updateHeaderStatus('ready', `ออนไลน์ พร้อมจับคู่ (รหัส #${code})`);
+        }
+        const diag = document.getElementById('peerServerDiagText');
+        if (diag) diag.textContent = `ออนไลน์ปกติ (ID: ${code})`;
+      });
+
+      peer.on('connection', (conn) => {
+        setupDataConnection(conn, true);
+      });
+
+      peer.on('error', (err) => {
+        console.warn('PeerJS Warning/Error:', err.type, err);
+        if (err.type === 'unavailable-id') {
+          // Code collision on public PeerJS server -> generate a fresh 6-digit code
+          myDeviceCode = generateRandomCode();
+          renderMyCodeDisplay();
+          generateQRCode(myDeviceCode);
+          setTimeout(() => initPeerJS(myDeviceCode), 400);
+        } else if (err.type === 'peer-unavailable') {
+          showToast(`ไม่พบรหัสเครื่อง #${targetCode} ออนไลน์อยู่ กรุณาตรวจสอบว่าอีกเครื่องเปิดหน้าเว็บอยู่`, 'error');
+          setDisconnectedUI();
+        } else if (err.type === 'network' || err.type === 'server-error') {
+          updateHeaderStatus('offline', 'สัญญาณ PeerJS ขัดข้อง (ยังใช้โหมดแท็บเดียวกันได้)');
+        }
+      });
+
+      peer.on('disconnected', () => {
+        if (peer && !peer.destroyed) {
+          peer.reconnect();
+        }
+      });
+    }
+
+    function reconnectPeerServer() {
+      initPeerJS(myDeviceCode);
+      showToast('กำลังรีเซ็ตสัญญาณการเชื่อมต่อ WebRTC...', 'info');
+    }
+
+    function setupDataConnection(conn, isIncoming) {
+      activeConn = conn;
+
+      conn.on('open', () => {
+        const remoteCode = (conn.peer || '').replace(PEER_PREFIX, '');
+        targetCode = remoteCode || targetCode || myDeviceCode;
+        isConnected = true;
+
+        // Fill PIN boxes visually if incoming connection
+        if (isIncoming && remoteCode.length === 6) {
+          const inputs = document.querySelectorAll('.pin-input');
+          remoteCode.split('').forEach((ch, idx) => {
+            if (inputs[idx]) inputs[idx].value = ch;
+          });
+        }
+
+        // Send hello handshake with our device name
+        conn.send({
+          type: 'HELLO',
+          senderName: getDeviceName(),
+          senderCode: myDeviceCode
+        });
+
+        setConnectedUI(targetCode, isIncoming ? 'เครื่องต้นทางเชื่อมต่อเข้ามา' : 'เชื่อมต่อสำเร็จ');
+        playNotificationTone(660, 0.08);
+      });
+
+      conn.on('data', (data) => {
+        handleIncomingPeerData(data);
+      });
+
+      conn.on('close', () => {
+        showToast('การเชื่อมต่อกับเครื่องปลายทางสิ้นสุดลง', 'info');
+        setDisconnectedUI();
+      });
+
+      conn.on('error', (err) => {
+        console.error('DataConnection error:', err);
+      });
+    }
+
+    function handleIncomingPeerData(data) {
+      if (!data || !data.type) return;
+
+      if (data.type === 'HELLO') {
+        const peerName = data.senderName || `เครื่อง #${data.senderCode || targetCode}`;
+        setConnectedUI(data.senderCode || targetCode, peerName);
+        showToast(`เชื่อมต่อกับ "${peerName}" สำเร็จแล้ว! ส่งไฟล์หากันได้เลย`, 'success');
+      }
+
+      else if (data.type === 'TEXT_ITEM') {
+        onReceiveNewItem({
+          id: data.id,
+          kind: 'text',
+          text: data.text,
+          sender: data.senderName || `เครื่อง #${targetCode}`,
+          timestamp: data.timestamp || getNowTimeStr()
+        });
+      }
+
+      else if (data.type === 'FILE_START') {
+        incomingFileBuffers[data.id] = {
+          meta: data,
+          chunks: [],
+          receivedBytes: 0
+        };
+        // Create placeholder item on receiver UI with progress bar
+        const placeholder = {
+          id: data.id,
+          kind: 'file',
+          name: data.name,
+          size: data.size,
+          mime: data.mime,
+          progress: 0,
+          status: 'receiving',
+          sender: data.senderName || `เครื่อง #${targetCode}`,
+          timestamp: getNowTimeStr()
+        };
+        receivedItems.unshift(placeholder);
+        renderReceivedItems();
+
+        if (currentTab !== 'receive') {
+          const badge = document.getElementById('receiveBadge');
+          badge.textContent = receivedItems.length;
+          badge.classList.remove('hidden');
+          showToast(`กำลังรับไฟล์ "${data.name}"...`, 'info');
+        }
+      }
+
+      else if (data.type === 'FILE_CHUNK') {
+        const entry = incomingFileBuffers[data.id];
+        if (!entry) return;
+        entry.chunks.push(data.chunk);
+        entry.receivedBytes += (data.chunk.byteLength || data.chunk.size || 0);
+        const pct = entry.meta.size > 0
+          ? Math.min(99, Math.round((entry.receivedBytes / entry.meta.size) * 100))
+          : 99;
+        
+        const recItem = receivedItems.find(i => i.id === data.id);
+        if (recItem) {
+          recItem.progress = pct;
+          updateReceiveProgressBarDOM(data.id, pct);
+        }
+      }
+
+      else if (data.type === 'FILE_END') {
+        const entry = incomingFileBuffers[data.id];
+        if (!entry) return;
+        const blob = new Blob(entry.chunks, { type: entry.meta.mime || 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+
+        const recItem = receivedItems.find(i => i.id === data.id);
+        if (recItem) {
+          recItem.url = url;
+          recItem.progress = 100;
+          recItem.status = 'completed';
+        }
+        delete incomingFileBuffers[data.id];
+        renderReceivedItems();
+        playNotificationTone(880, 0.12);
+        showToast(`รับไฟล์ "${entry.meta.name}" ครบสมบูรณ์แล้ว!`, 'success');
+
+        // Auto download if enabled in settings
+        if (document.getElementById('autoDownloadToggle')?.checked) {
+          triggerDownloadUrl(url, entry.meta.name);
+        }
+      }
+    }
+
+    // --- UI Status Helpers ---
+    function updateHeaderStatus(state, text) {
+      const dot = document.getElementById('statusDot');
+      const label = document.getElementById('statusText');
+      if (!dot || !label) return;
+
+      dot.className = 'w-2.5 h-2.5 rounded-full inline-block transition-all duration-300';
+      if (state === 'connected') {
+        dot.classList.add('bg-emerald-400', 'shadow-[0_0_10px_#34d399]');
+        label.className = 'text-xs text-emerald-400 font-medium';
+      } else if (state === 'ready') {
+        dot.classList.add('bg-blue-400', 'shadow-[0_0_8px_#60a5fa]');
+        label.className = 'text-xs text-blue-300';
+      } else if (state === 'connecting') {
+        dot.classList.add('bg-amber-400', 'animate-pulse');
+        label.className = 'text-xs text-amber-300';
+      } else {
+        dot.classList.add('bg-rose-500');
+        label.className = 'text-xs text-slate-400';
+      }
+      label.textContent = text;
+    }
+
+    function setConnectedUI(code, peerNameLabel) {
+      isConnected = true;
+      targetCode = code;
+
+      updateHeaderStatus('connected', `เชื่อมต่อกับ ${peerNameLabel} (#${code}) แล้ว`);
+
+      document.getElementById('targetDeviceSubtitle').innerHTML =
+        `เชื่อมต่อกับ <span class="text-blue-400 font-semibold">${escapeHtml(peerNameLabel)} (#${escapeHtml(code)})</span> พร้อมรับ-ส่งข้อมูล`;
+      document.getElementById('receiverStatusSubtitle').innerHTML =
+        `เชื่อมต่อกับ <span class="text-blue-400 font-semibold">${escapeHtml(peerNameLabel)} (#${escapeHtml(code)})</span> แล้ว`;
+
+      const banner = document.getElementById('connectedBanner');
+      banner.classList.remove('hidden');
+      document.getElementById('connectedBannerText').textContent =
+        `จับคู่กับ ${peerNameLabel} (#${code}) สำเร็จ! เลือกไฟล์หรือส่งข้อความได้เลย`;
+
+      const globalBar = document.getElementById('globalConnectionBar');
+      globalBar.classList.remove('hidden');
+      globalBar.classList.add('flex');
+      document.getElementById('globalConnectionText').textContent = `จับคู่กับ ${peerNameLabel} (#${code}) อยู่`;
+
+      const step2Badge = document.getElementById('step2Badge');
+      const step2Title = document.getElementById('step2Title');
+      step2Badge.className = 'w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white text-xs font-bold flex items-center justify-center transition-colors shadow-sm';
+      step2Title.className = 'text-[14px] font-semibold text-white transition-colors';
+    }
+
+    function setDisconnectedUI() {
+      isConnected = false;
+      targetCode = '';
+      if (activeConn) {
+        try { activeConn.close(); } catch (e) {}
+        activeConn = null;
+      }
+
+      if (peer && peer.open) {
+        updateHeaderStatus('ready', `ออนไลน์ พร้อมจับคู่ (รหัส #${myDeviceCode})`);
+      } else {
+        updateHeaderStatus('offline', 'ยังไม่ได้เชื่อมต่อ');
+      }
+
+      document.getElementById('targetDeviceSubtitle').textContent = 'ยังไม่ได้เลือกเครื่องปลายทาง';
+      document.getElementById('receiverStatusSubtitle').textContent = 'รอรับไฟล์และข้อความจากเครื่องต้นทางแบบเรียลไทม์';
+      document.getElementById('connectedBanner').classList.add('hidden');
+
+      const globalBar = document.getElementById('globalConnectionBar');
+      globalBar.classList.add('hidden');
+      globalBar.classList.remove('flex');
+
+      const step2Badge = document.getElementById('step2Badge');
+      const step2Title = document.getElementById('step2Title');
+      step2Badge.className = 'w-6 h-6 rounded-full bg-[#19253d] text-slate-400 text-xs font-bold flex items-center justify-center transition-colors';
+      step2Title.className = 'text-[14px] font-semibold text-slate-400 transition-colors';
     }
 
     // --- Tab Switching ---
@@ -564,7 +962,7 @@
       const viewReceive = document.getElementById('viewReceive');
       const receiveBadge = document.getElementById('receiveBadge');
 
-      const activeClasses = ['bg-[#0d2e33]', 'text-[#2dd4bf]', 'border-[#134e56]/80', 'shadow-sm'];
+      const activeClasses = ['bg-[#102447]', 'text-[#60a5fa]', 'border-[#1d4ed8]/80', 'shadow-sm'];
       const inactiveClasses = ['text-slate-400', 'hover:text-slate-200', 'border-transparent'];
 
       if (tab === 'send') {
@@ -609,6 +1007,10 @@
             inputs[idx - 1].focus();
             inputs[idx - 1].value = '';
             checkPinCompletion();
+          } else if (e.key === 'ArrowLeft' && idx > 0) {
+            inputs[idx - 1].focus();
+          } else if (e.key === 'ArrowRight' && idx < inputs.length - 1) {
+            inputs[idx + 1].focus();
           }
         });
 
@@ -635,67 +1037,61 @@
       const code = Array.from(inputs).map(i => i.value.trim()).join('');
       if (code.length === 6) {
         connectToTarget(code);
-      } else {
+      } else if (isConnected) {
         setDisconnectedUI();
       }
     }
 
     function connectToTarget(code) {
-      targetCode = code.toUpperCase();
-      isConnected = true;
+      const cleanCode = code.toUpperCase();
+      targetCode = cleanCode;
 
-      // Update Header Dot to Green
-      const statusDot = document.getElementById('statusDot');
-      const statusText = document.getElementById('statusText');
-      statusDot.classList.remove('bg-[#ef4444]');
-      statusDot.classList.add('bg-[#10b981]', 'shadow-[0_0_8px_#10b981]');
-      statusText.textContent = `เชื่อมต่อกับ #${targetCode} แล้ว`;
-      statusText.classList.replace('text-slate-400', 'text-emerald-400');
+      // Case 1: Connecting to own code (Loopback Demo or Same-Browser Multi-Tab)
+      if (cleanCode === myDeviceCode) {
+        setConnectedUI(cleanCode, 'เครื่องนี้ (โหมดทดสอบ / ข้ามแท็บ)');
+        if (localChannel) {
+          localChannel.postMessage({ type: 'PEER_CONNECTED', targetCode: cleanCode, senderName: getDeviceName() });
+        }
+        return;
+      }
 
-      // Update Subtitle & Connected Banner
-      document.getElementById('targetDeviceSubtitle').innerHTML =
-        `กำลังส่งไปยังเครื่อง <span class="text-teal-400 font-semibold">#${targetCode}</span>`;
-      
+      // Case 2: Real Cross-Device WebRTC Connection via PeerJS
       const banner = document.getElementById('connectedBanner');
       banner.classList.remove('hidden');
-      document.getElementById('connectedBannerText').textContent = `จับคู่กับเครื่อง #${targetCode} สำเร็จ พร้อมส่งไฟล์!`;
+      document.getElementById('connectedBannerText').textContent = `กำลังค้นหาและจับคู่กับเครื่อง #${cleanCode} ผ่าน WebRTC...`;
+      updateHeaderStatus('connecting', `กำลังเชื่อมต่อไปยัง #${cleanCode}...`);
 
-      // Highlight Step 2 badge
-      const step2Badge = document.getElementById('step2Badge');
-      const step2Title = document.getElementById('step2Title');
-      step2Badge.className = 'w-6 h-6 rounded-full bg-[#0096c7] text-white text-xs font-bold flex items-center justify-center transition-colors';
-      step2Title.className = 'text-[14px] font-semibold text-white transition-colors';
-
-      // Notify peer if on another tab
-      if (channel) {
-        channel.postMessage({ type: 'PEER_CONNECTED', targetCode, senderName: getDeviceName() });
+      // Also notify local BroadcastChannel in case the user opened 2 tabs on the same PC with different codes
+      if (localChannel) {
+        localChannel.postMessage({ type: 'PEER_CONNECTED', targetCode: cleanCode, senderName: getDeviceName() });
       }
-    }
 
-    function setDisconnectedUI() {
-      isConnected = false;
-      targetCode = '';
-      const statusDot = document.getElementById('statusDot');
-      const statusText = document.getElementById('statusText');
-      statusDot.classList.add('bg-[#ef4444]');
-      statusDot.classList.remove('bg-[#10b981]', 'shadow-[0_0_8px_#10b981]');
-      statusText.textContent = 'ยังไม่ได้เชื่อมต่อ';
-      statusText.classList.replace('text-emerald-400', 'text-slate-400');
-
-      document.getElementById('targetDeviceSubtitle').textContent = 'ยังไม่ได้เลือกเครื่องปลายทาง';
-      document.getElementById('connectedBanner').classList.add('hidden');
-
-      const step2Badge = document.getElementById('step2Badge');
-      const step2Title = document.getElementById('step2Title');
-      step2Badge.className = 'w-6 h-6 rounded-full bg-[#262b36] text-slate-400 text-xs font-bold flex items-center justify-center transition-colors';
-      step2Title.className = 'text-[14px] font-semibold text-slate-400 transition-colors';
+      if (peer && peer.open) {
+        try {
+          const conn = peer.connect(PEER_PREFIX + cleanCode, { reliable: true });
+          setupDataConnection(conn, false);
+        } catch (err) {
+          console.error('Peer connect error:', err);
+          showToast('เกิดข้อผิดพลาดในการเชื่อมต่อไปยังเครื่องปลายทาง', 'error');
+        }
+      } else {
+        // Fallback if PeerJS cloud is still initializing
+        setTimeout(() => {
+          if (peer && peer.open) {
+            const conn = peer.connect(PEER_PREFIX + cleanCode, { reliable: true });
+            setupDataConnection(conn, false);
+          } else {
+            setConnectedUI(cleanCode, `เครื่อง #${cleanCode} (โหมดโลคัล)`);
+          }
+        }, 1200);
+      }
     }
 
     function disconnectTarget() {
       const inputs = document.querySelectorAll('.pin-input');
       inputs.forEach(i => (i.value = ''));
       setDisconnectedUI();
-      inputs[0].focus();
+      inputs[0]?.focus();
     }
 
     function fillDemoCode(customCode) {
@@ -705,7 +1101,26 @@
         if (inputs[idx]) inputs[idx].value = ch;
       });
       connectToTarget(codeToFill);
-      showToast(`เชื่อมต่อกับรหัส #${codeToFill} เรียบร้อย ลองส่งไฟล์หรือข้อความได้เลย!`, 'info');
+      showToast(`จับคู่โหมดทดสอบ #${codeToFill} แล้ว ลองเลือกไฟล์หรือส่งข้อความได้เลย!`, 'info');
+    }
+
+    // --- URL Auto-Connect (?code=XXXXXX) for QR Code Scanning ---
+    function checkUrlAutoConnect() {
+      const params = new URLSearchParams(window.location.search);
+      const urlCode = params.get('code') || params.get('connect');
+      if (urlCode && urlCode.trim().length === 6) {
+        const clean = urlCode.trim().toUpperCase();
+        switchTab('send');
+        const inputs = document.querySelectorAll('.pin-input');
+        clean.split('').forEach((ch, idx) => {
+          if (inputs[idx]) inputs[idx].value = ch;
+        });
+        // Wait briefly for PeerJS to open then auto-connect
+        setTimeout(() => {
+          connectToTarget(clean);
+          showToast(`สแกน QR สำเร็จ! กำลังเชื่อมต่อกับเครื่อง #${clean}`, 'success');
+        }, 900);
+      }
     }
 
     // --- File Selection, Drag & Drop, and Paste ---
@@ -766,7 +1181,6 @@
 
     function initClipboardPaste() {
       window.addEventListener('paste', (e) => {
-        // Ignore if user is typing inside textarea or pin input
         const activeTag = document.activeElement?.tagName?.toLowerCase();
         if (activeTag === 'textarea' || activeTag === 'input') return;
 
@@ -789,22 +1203,23 @@
 
     function ensureTargetBeforeSend() {
       if (isConnected) return true;
-      const autoDemo = document.getElementById('autoDemoToggle')?.checked ?? true;
-      if (autoDemo) {
-        fillDemoCode(myDeviceCode);
+      // Check if 6 digits are filled
+      const inputs = document.querySelectorAll('.pin-input');
+      const typedCode = Array.from(inputs).map(i => i.value.trim()).join('');
+      if (typedCode.length === 6) {
+        connectToTarget(typedCode);
         return true;
-      } else {
-        showToast('กรุณาใส่รหัส 6 หลักของเครื่องปลายทางก่อนส่ง', 'error');
-        document.querySelector('.pin-input')?.focus();
-        return false;
       }
+      // Auto-connect to demo loopback so user never hits a dead end
+      fillDemoCode(myDeviceCode);
+      return true;
     }
 
     function processOutgoingFiles(files) {
       if (!ensureTargetBeforeSend()) return;
 
       files.forEach(file => {
-        const id = 'item_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+        const id = 'file_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
         const objectUrl = URL.createObjectURL(file);
         const newItem = {
           id,
@@ -816,18 +1231,78 @@
           target: targetCode,
           progress: 0,
           status: 'sending',
-          timestamp: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+          timestamp: getNowTimeStr()
         };
 
         sentItems.unshift(newItem);
         renderSentItems();
-        simulateFileTransfer(newItem, file);
+
+        // If connected via real WebRTC DataChannel, stream file in chunks!
+        if (activeConn && activeConn.open && targetCode !== myDeviceCode) {
+          sendRealFileOverWebRTC(newItem, file);
+        } else {
+          simulateOrLocalFileTransfer(newItem, file);
+        }
       });
     }
 
-    function simulateFileTransfer(item, rawFile) {
+    async function sendRealFileOverWebRTC(item, file) {
+      try {
+        activeConn.send({
+          type: 'FILE_START',
+          id: item.id,
+          name: file.name,
+          size: file.size,
+          mime: file.type || 'application/octet-stream',
+          senderName: getDeviceName()
+        });
+
+        const buffer = await file.arrayBuffer();
+        const total = buffer.byteLength;
+        let offset = 0;
+
+        const sendNextBatch = () => {
+          let batchCount = 0;
+          while (offset < total && batchCount < 8) {
+            const slice = buffer.slice(offset, offset + CHUNK_SIZE);
+            activeConn.send({
+              type: 'FILE_CHUNK',
+              id: item.id,
+              chunk: slice
+            });
+            offset += slice.byteLength;
+            batchCount++;
+          }
+
+          const pct = total > 0 ? Math.min(100, Math.round((offset / total) * 100)) : 100;
+          item.progress = pct;
+          updateProgressBarDOM(item.id, pct);
+
+          if (offset < total) {
+            setTimeout(sendNextBatch, 15);
+          } else {
+            activeConn.send({
+              type: 'FILE_END',
+              id: item.id
+            });
+            item.progress = 100;
+            item.status = 'completed';
+            renderSentItems();
+            playNotificationTone(880, 0.1);
+            showToast(`ส่งไฟล์ "${item.name}" ข้ามเครื่องสำเร็จ!`, 'success');
+          }
+        };
+
+        sendNextBatch();
+      } catch (err) {
+        console.error('WebRTC file transfer error:', err);
+        showToast('การส่งไฟล์ขัดข้อง กรุณาลองใหม่อีกครั้ง', 'error');
+      }
+    }
+
+    function simulateOrLocalFileTransfer(item, rawFile) {
       let progress = 0;
-      const step = Math.max(12, Math.floor(Math.random() * 28));
+      const step = Math.max(18, Math.floor(Math.random() * 32));
       const interval = setInterval(() => {
         progress += step;
         if (progress >= 100) {
@@ -836,10 +1311,10 @@
           item.progress = 100;
           item.status = 'completed';
           renderSentItems();
+          playNotificationTone(880, 0.1);
           showToast(`ส่งไฟล์ "${item.name}" สำเร็จ!`, 'success');
 
-          // Deliver to Receive tab (same tab + BroadcastChannel for other tabs)
-          deliverItemToReceiver({
+          deliverItemToLocalReceiver({
             id: item.id,
             kind: 'file',
             name: item.name,
@@ -854,7 +1329,7 @@
           item.progress = progress;
           updateProgressBarDOM(item.id, progress);
         }
-      }, 140);
+      }, 110);
     }
 
     function updateProgressBarDOM(id, progress) {
@@ -862,6 +1337,13 @@
       const label = document.getElementById(`prog_label_${id}`);
       if (bar) bar.style.width = `${progress}%`;
       if (label) label.textContent = `${progress}%`;
+    }
+
+    function updateReceiveProgressBarDOM(id, progress) {
+      const bar = document.getElementById(`rec_prog_${id}`);
+      const label = document.getElementById(`rec_prog_label_${id}`);
+      if (bar) bar.style.width = `${progress}%`;
+      if (label) label.textContent = `กำลังรับ ${progress}%`;
     }
 
     // --- Sending Text Snippets ---
@@ -884,6 +1366,7 @@
       if (!ensureTargetBeforeSend()) return;
 
       const id = 'txt_' + Date.now();
+      const timestamp = getNowTimeStr();
       const newItem = {
         id,
         kind: 'text',
@@ -891,22 +1374,34 @@
         target: targetCode,
         progress: 100,
         status: 'completed',
-        timestamp: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+        timestamp
       };
 
       sentItems.unshift(newItem);
       textarea.value = '';
       renderSentItems();
+      playNotificationTone(740, 0.08);
       showToast('ส่งข้อความไปยังเครื่องปลายทางแล้ว', 'success');
 
-      deliverItemToReceiver({
-        id: newItem.id,
-        kind: 'text',
-        text: newItem.text,
-        targetCode: newItem.target,
-        sender: getDeviceName(),
-        timestamp: newItem.timestamp
-      });
+      // Send via real WebRTC DataChannel if connected
+      if (activeConn && activeConn.open && targetCode !== myDeviceCode) {
+        activeConn.send({
+          type: 'TEXT_ITEM',
+          id,
+          text,
+          senderName: getDeviceName(),
+          timestamp
+        });
+      } else {
+        deliverItemToLocalReceiver({
+          id,
+          kind: 'text',
+          text,
+          targetCode,
+          sender: getDeviceName(),
+          timestamp
+        });
+      }
     }
 
     // --- Render Sent Items List ---
@@ -932,23 +1427,23 @@
       listEl.innerHTML = sentItems.map(item => {
         if (item.kind === 'text') {
           return `
-            <div class="p-3.5 rounded-xl bg-[#0c0e12] border border-[#1a1f28] hover:border-[#252c38] transition-all">
+            <div class="p-3.5 rounded-xl bg-[#070c16] border border-[#162036] hover:border-blue-500/40 transition-all">
               <div class="flex items-start justify-between gap-3">
-                <div class="flex items-start gap-3 min-w-0">
-                  <div class="w-9 h-9 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0 mt-0.5">
+                <div class="flex items-start gap-3 min-w-0 flex-1">
+                  <div class="w-9 h-9 rounded-lg bg-blue-500/10 border border-blue-500/25 text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
                     </svg>
                   </div>
                   <div class="min-w-0 flex-1">
                     <div class="flex items-center gap-2">
-                      <span class="text-xs font-semibold text-slate-200">ข้อความ</span>
-                      <span class="text-[11px] text-slate-500">→ #${item.target} · ${item.timestamp}</span>
+                      <span class="text-xs font-semibold text-blue-300">ข้อความ</span>
+                      <span class="text-[11px] text-slate-500">→ #${escapeHtml(item.target)} · ${item.timestamp}</span>
                     </div>
-                    <p class="text-xs text-slate-300 mt-1 break-all line-clamp-2 font-mono bg-[#11151c] px-2.5 py-1.5 rounded-lg border border-[#1a202c]">${escapeHtml(item.text)}</p>
+                    <p class="text-xs text-slate-200 mt-1.5 break-all line-clamp-3 font-mono bg-[#0b1324] px-2.5 py-2 rounded-lg border border-[#192846]">${escapeHtml(item.text)}</p>
                   </div>
                 </div>
-                <button onclick="copyTextToClipboard('${encodeURIComponent(item.text)}')" class="px-2.5 py-1.5 rounded-lg bg-[#151922] hover:bg-[#1e2430] text-slate-300 text-[11px] border border-[#242a36] shrink-0 transition-colors">
+                <button onclick="copyTextToClipboard('${encodeURIComponent(item.text)}')" class="px-2.5 py-1.5 rounded-lg bg-[#101c33] hover:bg-[#172847] text-blue-300 text-[11px] border border-blue-500/25 shrink-0 transition-colors">
                   คัดลอก
                 </button>
               </div>
@@ -956,28 +1451,31 @@
           `;
         }
 
-        // File item
         const isDone = item.status === 'completed';
+        const isImg = item.mime && item.mime.startsWith('image/') && item.url;
         return `
-          <div class="p-3.5 rounded-xl bg-[#0c0e12] border border-[#1a1f28] hover:border-[#252c38] transition-all">
+          <div class="p-3.5 rounded-xl bg-[#070c16] border border-[#162036] hover:border-blue-500/40 transition-all">
             <div class="flex items-center justify-between gap-3">
               <div class="flex items-center gap-3 min-w-0">
-                <div class="w-9 h-9 rounded-lg bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center shrink-0">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                  </svg>
-                </div>
+                ${isImg
+                  ? `<img src="${item.url}" alt="preview" class="w-10 h-10 rounded-lg object-cover border border-blue-500/30 shrink-0" />`
+                  : `<div class="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/25 text-blue-400 flex items-center justify-center shrink-0">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                      </svg>
+                    </div>`
+                }
                 <div class="min-w-0">
                   <p class="text-xs font-semibold text-slate-200 truncate">${escapeHtml(item.name)}</p>
-                  <p class="text-[11px] text-slate-500 mt-0.5">${formatBytes(item.size)} · ส่งไป #${item.target} · ${item.timestamp}</p>
+                  <p class="text-[11px] text-slate-500 mt-0.5">${formatBytes(item.size)} · ส่งไป #${escapeHtml(item.target)} · ${item.timestamp}</p>
                 </div>
               </div>
               <div class="flex items-center gap-2 shrink-0">
-                <span id="prog_label_${item.id}" class="text-[11px] font-medium ${isDone ? 'text-teal-400' : 'text-cyan-400'}">
-                  ${isDone ? 'ส่งแล้ว ✓' : item.progress + '%'}
+                <span id="prog_label_${item.id}" class="text-[11px] font-medium ${isDone ? 'text-blue-400' : 'text-amber-400'}">
+                  ${isDone ? 'ส่งสำเร็จ ✓' : item.progress + '%'}
                 </span>
                 ${item.url ? `
-                  <a href="${item.url}" download="${escapeHtml(item.name)}" class="p-1.5 rounded-lg bg-[#151922] hover:bg-[#1e2430] text-slate-300 border border-[#242a36]" title="ดาวน์โหลดไฟล์">
+                  <a href="${item.url}" download="${escapeHtml(item.name)}" class="p-1.5 rounded-lg bg-[#101c33] hover:bg-[#172847] text-blue-300 border border-blue-500/25" title="ดาวน์โหลดไฟล์">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3"></path>
                     </svg>
@@ -985,9 +1483,8 @@
                 ` : ''}
               </div>
             </div>
-            <!-- Progress bar -->
-            <div class="w-full h-1.5 bg-[#161a22] rounded-full overflow-hidden mt-2.5">
-              <div id="prog_${item.id}" class="h-full bg-gradient-to-r from-cyan-500 to-teal-400 transition-all duration-150" style="width: ${item.progress}%"></div>
+            <div class="w-full h-1.5 bg-[#10192b] rounded-full overflow-hidden mt-2.5">
+              <div id="prog_${item.id}" class="h-full bg-gradient-to-r from-blue-600 to-sky-400 transition-all duration-150" style="width: ${item.progress}%"></div>
             </div>
           </div>
         `;
@@ -1000,20 +1497,49 @@
       showToast('ล้างประวัติรายการที่ส่งแล้ว', 'info');
     }
 
-    // --- Receiver Side & Cross-Tab P2P ---
+    // --- Receiver Side & Real Scannable QR Code ---
     function renderMyCodeDisplay() {
       const container = document.getElementById('myCodeDisplayGrid');
+      const headerCode = document.getElementById('headerMyCode');
+      const qrHint = document.getElementById('qrCodeHintText');
+
+      if (headerCode) headerCode.textContent = myDeviceCode;
+      if (qrHint) qrHint.textContent = `#${myDeviceCode}`;
+
       container.innerHTML = myDeviceCode.split('').map(ch => `
-        <div class="h-14 rounded-xl bg-[#0c0e12] border border-[#1d222b] flex items-center justify-center text-lg font-bold text-teal-400 select-all">
+        <div class="h-14 rounded-xl bg-[#070c16] border border-[#1e2d4a] shadow-inner flex items-center justify-center text-xl font-bold text-blue-400 select-all">
           ${ch}
         </div>
       `).join('');
     }
 
+    function generateQRCode(codeStr) {
+      const container = document.getElementById('qrcodeContainer');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const baseUrl = window.location.origin + window.location.pathname;
+      const connectUrl = `${baseUrl}?code=${codeStr}`;
+
+      if (typeof QRCode !== 'undefined') {
+        new QRCode(container, {
+          text: connectUrl,
+          width: 156,
+          height: 156,
+          colorDark: '#060a12',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } else {
+        container.innerHTML = `<div class="text-xs text-slate-600 p-4 font-mono">${codeStr}</div>`;
+      }
+    }
+
     function regenerateMyCode() {
       myDeviceCode = generateRandomCode();
       renderMyCodeDisplay();
-      drawDecorativeQR(myDeviceCode);
+      generateQRCode(myDeviceCode);
+      initPeerJS(myDeviceCode);
       showToast(`เปลี่ยนรหัสเครื่องเป็น #${myDeviceCode} แล้ว`, 'info');
     }
 
@@ -1021,40 +1547,35 @@
       copyTextToClipboard(encodeURIComponent(myDeviceCode), `คัดลอกรหัสเครื่อง #${myDeviceCode} แล้ว`);
     }
 
-    function useMyCodeInSendTab() {
-      switchTab('send');
-      fillDemoCode(myDeviceCode);
+    function copyInviteLink() {
+      const baseUrl = window.location.origin + window.location.pathname;
+      const connectUrl = `${baseUrl}?code=${myDeviceCode}`;
+      copyTextToClipboard(
+        encodeURIComponent(connectUrl),
+        `คัดลอกลิงก์จับคู่ #${myDeviceCode} แล้ว ส่งให้อีกเครื่องเปิดได้เลย!`
+      );
     }
 
-    function deliverItemToReceiver(payload, rawFile) {
-      // 1. If target matches our own code (or single-tab demo), add to our Receive tab
+    function deliverItemToLocalReceiver(payload, rawFile) {
       if (payload.targetCode === myDeviceCode) {
-        onReceiveNewItem(payload);
+        onReceiveNewItem({ ...payload, status: 'completed', progress: 100 });
       }
-      // 2. Broadcast to any other open browser tabs
-      if (channel) {
-        const clonePayload = { ...payload };
-        if (rawFile) {
-          clonePayload.fileBlob = rawFile;
-        }
-        channel.postMessage({ type: 'NEW_TRANSFER', payload: clonePayload });
+      if (localChannel) {
+        const clonePayload = { ...payload, status: 'completed', progress: 100 };
+        if (rawFile) clonePayload.fileBlob = rawFile;
+        localChannel.postMessage({ type: 'NEW_TRANSFER', payload: clonePayload });
       }
     }
 
-    function setupBroadcastListener() {
-      if (!channel) return;
-      channel.onmessage = (event) => {
+    function setupLocalBroadcastListener() {
+      if (!localChannel) return;
+      localChannel.onmessage = (event) => {
         const data = event.data;
         if (!data) return;
 
         if (data.type === 'PEER_CONNECTED' && data.targetCode === myDeviceCode) {
-          const statusDot = document.getElementById('statusDot');
-          const statusText = document.getElementById('statusText');
-          statusDot.classList.remove('bg-[#ef4444]');
-          statusDot.classList.add('bg-[#10b981]', 'shadow-[0_0_8px_#10b981]');
-          statusText.textContent = `เชื่อมต่อกับ ${data.senderName} แล้ว`;
-          statusText.classList.replace('text-slate-400', 'text-emerald-400');
-          showToast(`เครื่อง "${data.senderName}" เชื่อมต่อเข้ามาแล้ว!`, 'info');
+          setConnectedUI(myDeviceCode, data.senderName || 'แท็บข้างเคียง');
+          showToast(`เชื่อมต่อกับ "${data.senderName}" สำเร็จ!`, 'info');
         }
 
         if (data.type === 'NEW_TRANSFER') {
@@ -1070,12 +1591,15 @@
     }
 
     function onReceiveNewItem(item) {
-      // Prevent duplicate IDs
-      if (receivedItems.some(r => r.id === item.id)) return;
-      receivedItems.unshift(item);
+      const existingIdx = receivedItems.findIndex(r => r.id === item.id);
+      if (existingIdx !== -1) {
+        receivedItems[existingIdx] = { ...receivedItems[existingIdx], ...item };
+      } else {
+        receivedItems.unshift({ ...item, status: item.status || 'completed', progress: item.progress ?? 100 });
+      }
       renderReceivedItems();
+      playNotificationTone(880, 0.1);
 
-      // Update badge if user is currently on Send tab
       if (currentTab !== 'receive') {
         const badge = document.getElementById('receiveBadge');
         badge.textContent = receivedItems.length;
@@ -1084,7 +1608,6 @@
         showToast(item.kind === 'text' ? 'ได้รับข้อความใหม่!' : `ได้รับไฟล์ "${item.name}"`, 'success');
       }
 
-      // Auto-copy text if setting enabled
       const autoCopy = document.getElementById('autoCopyToggle')?.checked ?? true;
       if (item.kind === 'text' && autoCopy) {
         copyRawString(item.text);
@@ -1093,12 +1616,12 @@
 
     function simulateIncomingItem() {
       const samples = [
-        { kind: 'file', name: 'Dropple_Design_Mockup.png', size: 1458200, mime: 'image/png' },
-        { kind: 'text', text: 'https://dropple.app/share/room-8942 — ลิงก์เอกสารสรุปการประชุมวันนี้ครับ' },
-        { kind: 'file', name: 'Project_Report_2026.pdf', size: 3204900, mime: 'application/pdf' }
+        { kind: 'file', name: 'TP_Drop_Architecture.png', size: 1843200, mime: 'image/png' },
+        { kind: 'text', text: 'https://github.com/ — ทดสอบส่งลิงก์และข้อความผ่านระบบ TP Drop WebRTC' },
+        { kind: 'file', name: 'Project_Presentation_2026.pdf', size: 4129000, mime: 'application/pdf' }
       ];
       const pick = samples[Math.floor(Math.random() * samples.length)];
-      const blob = new Blob([`Sample content from Dropple (${new Date().toISOString()})`], { type: 'text/plain' });
+      const blob = new Blob([`TP Drop Demo File (${new Date().toISOString()})`], { type: 'text/plain' });
 
       onReceiveNewItem({
         id: 'sim_' + Date.now(),
@@ -1108,7 +1631,9 @@
         text: pick.text,
         url: URL.createObjectURL(blob),
         sender: 'iPhone-16-Pro',
-        timestamp: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+        status: 'completed',
+        progress: 100,
+        timestamp: getNowTimeStr()
       });
     }
 
@@ -1130,98 +1655,156 @@
 
       listEl.innerHTML = receivedItems.map(item => {
         if (item.kind === 'text') {
+          const isUrl = /^https?:\/\/\S+$/i.test(item.text.trim());
           return `
-            <div class="p-3.5 rounded-xl bg-[#0c0e12] border border-[#1a1f28] hover:border-teal-500/30 transition-all">
+            <div class="p-3.5 rounded-xl bg-[#070c16] border border-[#162036] hover:border-blue-500/40 transition-all">
               <div class="flex items-start justify-between gap-3">
-                <div class="flex items-start gap-3 min-w-0">
-                  <div class="w-9 h-9 rounded-lg bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center shrink-0 mt-0.5">
+                <div class="flex items-start gap-3 min-w-0 flex-1">
+                  <div class="w-9 h-9 rounded-lg bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
                     </svg>
                   </div>
                   <div class="min-w-0 flex-1">
                     <div class="flex items-center gap-2">
-                      <span class="text-xs font-semibold text-teal-300">ข้อความจาก ${escapeHtml(item.sender || 'เครื่องต้นทาง')}</span>
+                      <span class="text-xs font-semibold text-blue-300">ข้อความจาก ${escapeHtml(item.sender || 'เครื่องต้นทาง')}</span>
                       <span class="text-[11px] text-slate-500">· ${item.timestamp}</span>
                     </div>
-                    <p class="text-xs text-slate-200 mt-1.5 break-all font-mono bg-[#11151c] px-2.5 py-2 rounded-lg border border-[#1a202c]">${escapeHtml(item.text)}</p>
+                    <p class="text-xs text-slate-200 mt-1.5 break-all font-mono bg-[#0b1324] px-2.5 py-2 rounded-lg border border-[#192846]">${escapeHtml(item.text)}</p>
                   </div>
                 </div>
-                <button onclick="copyTextToClipboard('${encodeURIComponent(item.text)}')" class="px-3 py-1.5 rounded-lg bg-[#0d2e33] hover:bg-[#13434a] text-[#2dd4bf] text-xs font-medium border border-[#134e56] shrink-0 transition-colors">
-                  คัดลอก
-                </button>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  ${isUrl ? `
+                    <a href="${escapeHtml(item.text.trim())}" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1.5 rounded-lg bg-[#101c33] hover:bg-[#172847] text-blue-300 text-xs border border-blue-500/25">
+                      เปิดลิงก์
+                    </a>
+                  ` : ''}
+                  <button onclick="copyTextToClipboard('${encodeURIComponent(item.text)}')" class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-xs font-medium transition-colors">
+                    คัดลอก
+                  </button>
+                </div>
               </div>
             </div>
           `;
         }
 
+        const isReceiving = item.status === 'receiving';
+        const isImg = item.mime && item.mime.startsWith('image/') && item.url;
         return `
-          <div class="p-3.5 rounded-xl bg-[#0c0e12] border border-[#1a1f28] hover:border-teal-500/30 transition-all flex items-center justify-between gap-3">
-            <div class="flex items-center gap-3 min-w-0">
-              <div class="w-9 h-9 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3"></path>
-                </svg>
+          <div class="p-3.5 rounded-xl bg-[#070c16] border border-[#162036] hover:border-blue-500/40 transition-all">
+            <div class="flex items-center justify-between gap-3">
+              <div class="flex items-center gap-3 min-w-0">
+                ${isImg
+                  ? `<img src="${item.url}" alt="received image" class="w-10 h-10 rounded-lg object-cover border border-blue-500/30 shrink-0" />`
+                  : `<div class="w-10 h-10 rounded-lg bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center shrink-0">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3"></path>
+                      </svg>
+                    </div>`
+                }
+                <div class="min-w-0">
+                  <p class="text-xs font-semibold text-white truncate">${escapeHtml(item.name)}</p>
+                  <p class="text-[11px] text-slate-500 mt-0.5">${formatBytes(item.size)} · จาก ${escapeHtml(item.sender || 'เครื่องต้นทาง')} · ${item.timestamp}</p>
+                </div>
               </div>
-              <div class="min-w-0">
-                <p class="text-xs font-semibold text-white truncate">${escapeHtml(item.name)}</p>
-                <p class="text-[11px] text-slate-500 mt-0.5">${formatBytes(item.size)} · จาก ${escapeHtml(item.sender || 'เครื่องต้นทาง')} · ${item.timestamp}</p>
+              <div class="flex items-center gap-2 shrink-0">
+                <span id="rec_prog_label_${item.id}" class="text-[11px] font-medium ${isReceiving ? 'text-amber-400' : 'text-emerald-400'}">
+                  ${isReceiving ? `กำลังรับ ${item.progress || 0}%` : 'รับแล้ว ✓'}
+                </span>
+                ${item.url ? `
+                  <a href="${item.url}" download="${escapeHtml(item.name)}" class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-xs font-medium transition-colors flex items-center gap-1.5 shadow-sm">
+                    <span>บันทึกไฟล์</span>
+                  </a>
+                ` : ''}
               </div>
             </div>
-            <a href="${item.url || '#'}" download="${escapeHtml(item.name)}" class="px-3 py-1.5 rounded-lg bg-[#0d2e33] hover:bg-[#13434a] text-[#2dd4bf] border border-[#134e56] text-xs font-medium shrink-0 transition-colors flex items-center gap-1.5">
-              <span>บันทึก</span>
-            </a>
+            ${isReceiving ? `
+              <div class="w-full h-1.5 bg-[#10192b] rounded-full overflow-hidden mt-2.5">
+                <div id="rec_prog_${item.id}" class="h-full bg-gradient-to-r from-blue-600 to-sky-400 transition-all duration-150" style="width: ${item.progress || 0}%"></div>
+              </div>
+            ` : ''}
           </div>
         `;
       }).join('');
     }
 
-    // --- Decorative Deterministic QR Code Canvas ---
-    function drawDecorativeQR(codeStr) {
-      const canvas = document.getElementById('qrCanvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      const size = 21;
-      const cell = canvas.width / size;
-
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      ctx.fillStyle = '#090b0e';
-
-      const drawFinder = (r, c) => {
-        ctx.fillRect(c * cell, r * cell, 7 * cell, 7 * cell);
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect((c + 1) * cell, (r + 1) * cell, 5 * cell, 5 * cell);
-        ctx.fillStyle = '#090b0e';
-        ctx.fillRect((c + 2) * cell, (r + 2) * cell, 3 * cell, 3 * cell);
-      };
-
-      drawFinder(0, 0);
-      drawFinder(0, size - 7);
-      drawFinder(size - 7, 0);
-
-      let seed = 0;
-      for (let i = 0; i < codeStr.length; i++) {
-        seed = (seed * 31 + codeStr.charCodeAt(i)) & 0xffffffff;
+    // --- Camera QR Code Scanner Modal ---
+    function openQrScannerModal() {
+      openModal('qrScannerModal');
+      if (typeof Html5Qrcode === 'undefined') {
+        document.getElementById('qrReaderBox').innerHTML =
+          '<p class="p-6 text-center text-rose-400">ไม่สามารถโหลดโมดูลกล้องสแกน QR ได้ กรุณาพิมพ์รหัส 6 หลักแทน</p>';
+        return;
       }
 
-      for (let r = 0; r < size; r++) {
-        for (let c = 0; c < size; c++) {
-          const inTopLeft = r < 8 && c < 8;
-          const inTopRight = r < 8 && c >= size - 8;
-          const inBottomLeft = r >= size - 8 && c < 8;
-          if (inTopLeft || inTopRight || inBottomLeft) continue;
-
-          seed = (seed * 1664525 + 1013904223) & 0xffffffff;
-          if ((seed >>> 28) % 2 === 0) {
-            ctx.fillRect(c * cell, r * cell, Math.ceil(cell), Math.ceil(cell));
+      html5QrScanner = new Html5Qrcode('qrReaderBox');
+      html5QrScanner.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 210, height: 210 } },
+        (decodedText) => {
+          // Extract 6-digit code from URL or raw text
+          let extracted = '';
+          try {
+            const u = new URL(decodedText);
+            extracted = u.searchParams.get('code') || u.searchParams.get('connect') || '';
+          } catch (e) {
+            extracted = decodedText.trim();
           }
-        }
-      }
+          extracted = extracted.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 6);
+          if (extracted.length === 6) {
+            closeQrScannerModal();
+            fillDemoCode(extracted);
+          }
+        },
+        () => {}
+      ).catch(() => {
+        document.getElementById('qrReaderBox').innerHTML =
+          '<p class="p-6 text-center text-slate-400">ไม่สามารถเข้าถึงกล้องได้ กรุณาอนุญาตการใช้กล้องบนเบราว์เซอร์ (ต้องเปิดผ่าน HTTPS เช่น GitHub Pages หรือ localhost)</p>';
+      });
     }
 
-    // --- Utilities (Clipboard, Formatting, Modals, Toasts) ---
+    function closeQrScannerModal() {
+      if (html5QrScanner) {
+        html5QrScanner.stop().catch(() => {}).finally(() => {
+          html5QrScanner.clear();
+          html5QrScanner = null;
+        });
+      }
+      closeModal('qrScannerModal');
+    }
+
+    // --- Utilities ---
+    function getNowTimeStr() {
+      return new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function triggerDownloadUrl(url, filename) {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename || 'tpdrop-file';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function playNotificationTone(freq = 720, duration = 0.09) {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.06, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + duration);
+      } catch (e) {}
+    }
+
     function copyRawString(str) {
       const ta = document.createElement('textarea');
       ta.value = str;
@@ -1251,7 +1834,7 @@
 
     function escapeHtml(str) {
       if (!str) return '';
-      return str
+      return String(str)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
@@ -1260,7 +1843,7 @@
     }
 
     function getDeviceName() {
-      return document.getElementById('deviceNameInput')?.value?.trim() || 'Dropple-PC';
+      return document.getElementById('deviceNameInput')?.value?.trim() || 'TP-Device';
     }
 
     function openModal(id) {
@@ -1280,31 +1863,33 @@
     }
 
     function saveSettings() {
+      const nameVal = document.getElementById('deviceNameInput')?.value?.trim();
+      if (nameVal) localStorage.setItem('tpdrop_device_name', nameVal);
       closeModal('settingsModal');
       showToast('บันทึกการตั้งค่าเรียบร้อยแล้ว', 'success');
     }
 
     function resetOrDemoToast() {
-      showToast('Dropple — ลากไฟล์มาวางตรงไหนของหน้าเพื่อส่งได้ทันที', 'info');
+      showToast('TP Drop 📲 — ระบบรับส่งไฟล์ข้ามเครื่องผ่าน WebRTC พร้อมใช้งานบน GitHub Pages', 'info');
     }
 
     function showToast(message, type = 'info') {
       const container = document.getElementById('toastContainer');
       const toast = document.createElement('div');
       
-      let borderColor = 'border-[#1d222b]';
-      let iconColor = 'text-cyan-400';
+      let borderColor = 'border-[#1e2f52]';
+      let dotColor = 'bg-blue-400';
       if (type === 'success') {
-        borderColor = 'border-teal-500/40';
-        iconColor = 'text-teal-400';
+        borderColor = 'border-emerald-500/40';
+        dotColor = 'bg-emerald-400';
       } else if (type === 'error') {
         borderColor = 'border-rose-500/40';
-        iconColor = 'text-rose-400';
+        dotColor = 'bg-rose-400';
       }
 
-      toast.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-xl bg-[#12161f]/95 backdrop-blur border ${borderColor} shadow-xl text-xs text-slate-200 transition-all duration-300 translate-y-2 opacity-0`;
+      toast.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-xl bg-[#0c1426]/95 backdrop-blur border ${borderColor} shadow-xl text-xs text-slate-200 transition-all duration-300 translate-y-2 opacity-0`;
       toast.innerHTML = `
-        <span class="w-2 h-2 rounded-full ${iconColor.replace('text-', 'bg-')}"></span>
+        <span class="w-2 h-2 rounded-full ${dotColor} shrink-0"></span>
         <span>${escapeHtml(message)}</span>
       `;
 
@@ -1316,7 +1901,7 @@
       setTimeout(() => {
         toast.classList.add('opacity-0', 'translate-y-2');
         setTimeout(() => toast.remove(), 300);
-      }, 3000);
+      }, 3400);
     }
   </script>
 </body>
