@@ -3,7 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TP Drop</title>
+  <title>TP Drop 📲 — รับ-ส่งไฟล์และข้อความข้ามเครื่องผ่าน WebRTC</title>
+  <meta name="theme-color" content="#060a12" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="TP Drop" />
+  <!-- Favicon & Apple Touch Icon (Sapphire & Sky Blue Rounded Square with 📲) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%232563eb'/%3E%3Cstop offset='100%25' stop-color='%230ea5e9'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='url(%23g)'/%3E%3Crect x='3' y='3' width='94' height='94' rx='21' fill='none' stroke='%2393c5fd' stroke-opacity='0.35' stroke-width='2'/%3E%3Ctext x='50' y='54' font-size='54' text-anchor='middle' dominant-baseline='central'%3E📲%3C/text%3E%3C/svg%3E" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%232563eb'/%3E%3Cstop offset='100%25' stop-color='%230ea5e9'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='url(%23g)'/%3E%3Ctext x='50' y='54' font-size='54' text-anchor='middle' dominant-baseline='central'%3E📲%3C/text%3E%3C/svg%3E" />
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- PeerJS for Real Cross-Device WebRTC P2P -->
@@ -217,7 +224,7 @@
       <!-- Left Column: Sent Items Card (7 cols on lg) -->
       <div class="lg:col-span-7 bg-[#0b111e] border border-[#19253d] rounded-2xl overflow-hidden flex flex-col min-h-[550px] shadow-xl shadow-black/20">
         <!-- Card Header -->
-        <div class="px-5 py-4 border-b border-[#162036] flex items-center justify-between">
+        <div class="px-5 py-4 border-b border-[#162036] flex flex-wrap items-center justify-between gap-2">
           <div class="flex items-center gap-3.5">
             <div class="w-10 h-10 rounded-xl bg-[#102447] border border-[#1d4ed8]/60 flex items-center justify-center text-[#60a5fa]">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -230,8 +237,17 @@
             </div>
           </div>
 
-          <div class="flex items-center gap-3">
-            <span id="sentCountLabel" class="text-xs text-slate-400">ยังไม่มีรายการ</span>
+          <div class="flex items-center gap-2.5">
+            <!-- Filter: All vs Favorites -->
+            <div class="inline-flex p-0.5 rounded-lg bg-[#070c16] border border-[#19253d] text-[11px]">
+              <button id="sentFilterAllBtn" onclick="setSentFilter('all')" class="px-2.5 py-1 rounded-md bg-[#102447] text-blue-300 font-medium transition-all">ทั้งหมด</button>
+              <button id="sentFilterFavBtn" onclick="setSentFilter('fav')" class="px-2.5 py-1 rounded-md text-slate-400 hover:text-amber-300 font-medium transition-all flex items-center gap-1">
+                <span>⭐</span>
+                <span>รายการโปรด</span>
+                <span id="sentFavCountBadge" class="text-[10px] px-1 rounded bg-amber-500/20 text-amber-300 hidden">0</span>
+              </button>
+            </div>
+            <span id="sentCountLabel" class="text-xs text-slate-400 hidden sm:inline">ยังไม่มีรายการ</span>
             <button id="clearSentBtn" onclick="clearSentItems()" class="hidden text-xs text-slate-400 hover:text-rose-400 transition-colors">ล้างทั้งหมด</button>
           </div>
         </div>
@@ -294,12 +310,33 @@
           </div>
 
           <!-- Connection Progress / Status Banner -->
-          <div id="connectedBanner" class="hidden mt-3.5 px-3.5 py-2.5 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-between">
-            <div class="flex items-center gap-2 text-xs text-blue-300">
-              <span id="bannerDot" class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
-              <span id="connectedBannerText">เชื่อมต่อกับเครื่องปลายทางแล้ว พร้อมส่ง!</span>
+          <div id="connectedBanner" class="hidden mt-3.5 px-3.5 py-2.5 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 text-xs text-blue-300 min-w-0">
+              <span id="bannerDot" class="w-2 h-2 rounded-full bg-blue-400 animate-pulse shrink-0"></span>
+              <span id="connectedBannerText" class="truncate">เชื่อมต่อกับเครื่องปลายทางแล้ว พร้อมส่ง!</span>
             </div>
-            <button onclick="disconnectTarget()" class="text-[11px] text-slate-400 hover:text-white underline shrink-0 ml-2">เปลี่ยนเครื่อง</button>
+            <div class="flex items-center gap-2 shrink-0">
+              <button onclick="saveCurrentTargetAsFavorite()" class="text-[11px] px-2 py-0.5 rounded-md bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 transition-all flex items-center gap-1" title="บันทึกเครื่องนี้เป็นเครื่องโปรด">
+                <span>⭐ บันทึก</span>
+              </button>
+              <button onclick="disconnectTarget()" class="text-[11px] text-slate-400 hover:text-white underline">เปลี่ยนเครื่อง</button>
+            </div>
+          </div>
+
+          <!-- ⭐ Favorite Devices Section (เครื่องโปรดที่ใช้บ่อย) -->
+          <div class="mt-4 pt-3.5 border-t border-[#162036]">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-1.5 text-xs font-medium text-slate-300">
+                <span class="text-amber-400">⭐</span>
+                <span>เครื่องโปรดที่ใช้บ่อย</span>
+              </div>
+              <button onclick="openAddFavDeviceModal()" class="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors">
+                <span>+ เพิ่มเครื่องโปรด</span>
+              </button>
+            </div>
+            <div id="favDevicesList" class="flex flex-wrap gap-1.5">
+              <!-- Populated by JS -->
+            </div>
           </div>
         </div>
 
@@ -379,7 +416,7 @@
       
       <!-- Left Column: Received Items Card (7 cols on lg) -->
       <div class="lg:col-span-7 bg-[#0b111e] border border-[#19253d] rounded-2xl overflow-hidden flex flex-col min-h-[550px] shadow-xl shadow-black/20">
-        <div class="px-5 py-4 border-b border-[#162036] flex items-center justify-between">
+        <div class="px-5 py-4 border-b border-[#162036] flex flex-wrap items-center justify-between gap-2">
           <div class="flex items-center gap-3.5">
             <div class="w-10 h-10 rounded-xl bg-[#102447] border border-[#1d4ed8]/60 flex items-center justify-center text-[#60a5fa]">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -392,8 +429,17 @@
             </div>
           </div>
 
-          <div class="flex items-center gap-2.5">
-            <span id="receivedCountLabel" class="text-xs text-slate-400">ยังไม่มีรายการ</span>
+          <div class="flex items-center gap-2">
+            <!-- Filter: All vs Favorites -->
+            <div class="inline-flex p-0.5 rounded-lg bg-[#070c16] border border-[#19253d] text-[11px]">
+              <button id="recFilterAllBtn" onclick="setReceivedFilter('all')" class="px-2.5 py-1 rounded-md bg-[#102447] text-blue-300 font-medium transition-all">ทั้งหมด</button>
+              <button id="recFilterFavBtn" onclick="setReceivedFilter('fav')" class="px-2.5 py-1 rounded-md text-slate-400 hover:text-amber-300 font-medium transition-all flex items-center gap-1">
+                <span>⭐</span>
+                <span>รายการโปรด</span>
+                <span id="recFavCountBadge" class="text-[10px] px-1 rounded bg-amber-500/20 text-amber-300 hidden">0</span>
+              </button>
+            </div>
+            <span id="receivedCountLabel" class="text-xs text-slate-400 hidden sm:inline">ยังไม่มีรายการ</span>
             <button onclick="simulateIncomingItem()" class="text-[11px] px-2.5 py-1 rounded-lg bg-[#101c33] hover:bg-[#172847] text-blue-400 border border-blue-500/30 transition-all">
               + จำลองรับไฟล์
             </button>
@@ -477,8 +523,38 @@
   <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- ========================================== -->
-  <!-- MODALS (QR Scanner, GitHub Guide, Help, Settings) -->
+  <!-- MODALS (QR Scanner, Favorite Device, GitHub Guide, Help, Settings) -->
   <!-- ========================================== -->
+
+  <!-- Add / Edit Favorite Device Modal -->
+  <div id="favDeviceModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div class="bg-[#0b111e] border border-[#19253d] rounded-2xl max-w-sm w-full p-5 shadow-2xl">
+      <div class="flex items-center justify-between mb-3.5">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <span>⭐ เพิ่มเครื่องโปรดที่ใช้บ่อย</span>
+        </h3>
+        <button onclick="closeModal('favDeviceModal')" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">ชื่อเรียกเครื่อง (เช่น มือถือของฉัน, โน้ตบุ๊กทำงาน)</label>
+          <input id="favDeviceNameInput" type="text" maxlength="28" placeholder="เช่น iPhone ของฉัน" class="w-full px-3.5 py-2.5 rounded-xl bg-[#070c16] border border-[#1e2d4a] text-white focus:outline-none focus:border-blue-500" />
+        </div>
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">รหัสประจำเครื่อง 6 หลัก</label>
+          <input id="favDeviceCodeInput" type="text" maxlength="6" placeholder="เช่น 482910" class="w-full px-3.5 py-2.5 rounded-xl bg-[#070c16] border border-[#1e2d4a] text-blue-400 font-mono font-bold tracking-widest uppercase focus:outline-none focus:border-blue-500" />
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-2 mt-5">
+        <button onclick="closeModal('favDeviceModal')" class="py-2.5 rounded-xl bg-[#131e36] hover:bg-[#1a2947] text-slate-300 text-xs font-semibold transition-all">
+          ยกเลิก
+        </button>
+        <button onclick="confirmSaveFavDevice()" class="py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-xs font-semibold transition-all shadow-md shadow-blue-600/20">
+          บันทึกเครื่องโปรด
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Camera QR Scanner Modal -->
   <div id="qrScannerModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4">
@@ -638,12 +714,19 @@
     let receivedItems = [];
     let incomingFileBuffers = {}; // fileId -> { meta, chunks: [], receivedBytes: 0 }
 
+    // Favorites State (Devices & Starred Items)
+    let favoriteDevices = [];
+    let sentFilterMode = 'all'; // 'all' | 'fav'
+    let receivedFilterMode = 'all'; // 'all' | 'fav'
+    let lastConnectedPeerName = '';
+
     // Local same-browser fallback channel
     const localChannel = ('BroadcastChannel' in window) ? new BroadcastChannel('tpdrop_local_channel') : null;
 
     // --- Initialization ---
     window.addEventListener('DOMContentLoaded', () => {
       initDefaultDeviceName();
+      loadFavoritesState();
       initPinInputs();
       renderMyCodeDisplay();
       generateQRCode(myDeviceCode);
@@ -653,6 +736,203 @@
       initPeerJS(myDeviceCode);
       checkUrlAutoConnect();
     });
+
+    // =====================================================
+    // FAVORITES SYSTEM (FAVORITE DEVICES & STARRED ITEMS)
+    // =====================================================
+    function loadFavoritesState() {
+      try {
+        const savedDevs = JSON.parse(localStorage.getItem('tpdrop_fav_devices') || 'null');
+        if (Array.isArray(savedDevs)) {
+          favoriteDevices = savedDevs;
+        } else {
+          // Provide a helpful default loopback favorite so user sees how it works immediately
+          favoriteDevices = [
+            { name: 'เครื่องนี้ (ทดสอบ)', code: myDeviceCode }
+          ];
+        }
+      } catch (e) {
+        favoriteDevices = [];
+      }
+
+      // Load starred text/file metadata history from localStorage
+      try {
+        const savedFavSent = JSON.parse(localStorage.getItem('tpdrop_fav_sent_items') || '[]');
+        if (Array.isArray(savedFavSent) && savedFavSent.length > 0) {
+          sentItems = savedFavSent;
+        }
+        const savedFavRec = JSON.parse(localStorage.getItem('tpdrop_fav_rec_items') || '[]');
+        if (Array.isArray(savedFavRec) && savedFavRec.length > 0) {
+          receivedItems = savedFavRec;
+        }
+      } catch (e) {}
+
+      renderFavoriteDevices();
+      renderSentItems();
+      renderReceivedItems();
+    }
+
+    function persistFavoriteDevices() {
+      try {
+        localStorage.setItem('tpdrop_fav_devices', JSON.stringify(favoriteDevices));
+      } catch (e) {}
+    }
+
+    function persistStarredHistory() {
+      try {
+        // Persist starred items (text snippets & file records) so they remain available on reload
+        const favSent = sentItems.filter(i => i.favorite).slice(0, 30);
+        const favRec = receivedItems.filter(i => i.favorite).slice(0, 30);
+        localStorage.setItem('tpdrop_fav_sent_items', JSON.stringify(favSent));
+        localStorage.setItem('tpdrop_fav_rec_items', JSON.stringify(favRec));
+      } catch (e) {}
+    }
+
+    function renderFavoriteDevices() {
+      const container = document.getElementById('favDevicesList');
+      if (!container) return;
+
+      if (favoriteDevices.length === 0) {
+        container.innerHTML = `
+          <span class="text-[11px] text-slate-500">ยังไม่มีเครื่องโปรด กด "+ เพิ่มเครื่องโปรด" เพื่อบันทึกเครื่องที่ใช้บ่อย</span>
+        `;
+        return;
+      }
+
+      container.innerHTML = favoriteDevices.map((dev, idx) => {
+        const isCurrent = isConnected && targetCode === dev.code;
+        return `
+          <div class="group inline-flex items-center rounded-xl border ${isCurrent ? 'bg-blue-500/20 border-blue-400 text-blue-200' : 'bg-[#070c16] border-[#19253d] hover:border-blue-500/50 text-slate-300'} text-[11px] transition-all overflow-hidden">
+            <button onclick="quickConnectFavorite('${escapeHtml(dev.code)}', '${escapeHtml(dev.name)}')" class="px-2.5 py-1.5 flex items-center gap-1.5 hover:text-white transition-colors" title="คลิกเพื่อเชื่อมต่อกับ ${escapeHtml(dev.name)} (#${escapeHtml(dev.code)})">
+              <span class="text-amber-400">⭐</span>
+              <span class="font-medium">${escapeHtml(dev.name)}</span>
+              <span class="font-mono text-[10px] text-blue-400 opacity-85">#${escapeHtml(dev.code)}</span>
+            </button>
+            <button onclick="removeFavoriteDevice(${idx})" class="px-1.5 py-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors" title="ลบออกจากรายการโปรด">
+              ✕
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function quickConnectFavorite(code, name) {
+      const inputs = document.querySelectorAll('.pin-input');
+      code.split('').forEach((ch, idx) => {
+        if (inputs[idx]) inputs[idx].value = ch;
+      });
+      connectToTarget(code);
+      showToast(`กำลังเชื่อมต่อด่วนไปยัง "${name}" (#${code})`, 'info');
+    }
+
+    function openAddFavDeviceModal() {
+      const nameInput = document.getElementById('favDeviceNameInput');
+      const codeInput = document.getElementById('favDeviceCodeInput');
+      const inputs = document.querySelectorAll('.pin-input');
+      const typedCode = Array.from(inputs).map(i => i.value.trim()).join('');
+
+      codeInput.value = targetCode || (typedCode.length === 6 ? typedCode : '');
+      nameInput.value = lastConnectedPeerName && lastConnectedPeerName !== 'เชื่อมต่อสำเร็จ'
+        ? lastConnectedPeerName
+        : '';
+      openModal('favDeviceModal');
+      setTimeout(() => nameInput.focus(), 80);
+    }
+
+    function saveCurrentTargetAsFavorite() {
+      if (!targetCode || targetCode.length !== 6) {
+        openAddFavDeviceModal();
+        return;
+      }
+      const existing = favoriteDevices.find(d => d.code === targetCode);
+      if (existing) {
+        showToast(`เครื่อง #${targetCode} (${existing.name}) อยู่ในรายการโปรดแล้ว`, 'info');
+        return;
+      }
+      document.getElementById('favDeviceCodeInput').value = targetCode;
+      document.getElementById('favDeviceNameInput').value =
+        (lastConnectedPeerName && !lastConnectedPeerName.includes('เชื่อมต่อ'))
+          ? lastConnectedPeerName
+          : `เครื่อง #${targetCode}`;
+      openModal('favDeviceModal');
+    }
+
+    function confirmSaveFavDevice() {
+      const nameEl = document.getElementById('favDeviceNameInput');
+      const codeEl = document.getElementById('favDeviceCodeInput');
+      const cleanCode = (codeEl.value || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 6);
+      const cleanName = (nameEl.value || '').trim() || `เครื่อง #${cleanCode}`;
+
+      if (cleanCode.length !== 6) {
+        showToast('กรุณากรอกรหัสประจำเครื่องให้ครบ 6 หลัก', 'error');
+        codeEl.focus();
+        return;
+      }
+
+      const existingIdx = favoriteDevices.findIndex(d => d.code === cleanCode);
+      if (existingIdx !== -1) {
+        favoriteDevices[existingIdx].name = cleanName;
+      } else {
+        favoriteDevices.unshift({ name: cleanName, code: cleanCode });
+      }
+
+      persistFavoriteDevices();
+      renderFavoriteDevices();
+      closeModal('favDeviceModal');
+      showToast(`บันทึก "${cleanName}" (#${cleanCode}) ลงในเครื่องโปรดแล้ว ⭐`, 'success');
+    }
+
+    function removeFavoriteDevice(index) {
+      const removed = favoriteDevices.splice(index, 1);
+      persistFavoriteDevices();
+      renderFavoriteDevices();
+      if (removed[0]) {
+        showToast(`ลบ "${removed[0].name}" ออกจากรายการโปรดแล้ว`, 'info');
+      }
+    }
+
+    function toggleFavoriteItem(listType, itemId) {
+      const arr = listType === 'sent' ? sentItems : receivedItems;
+      const target = arr.find(i => i.id === itemId);
+      if (!target) return;
+      target.favorite = !target.favorite;
+      persistStarredHistory();
+
+      if (listType === 'sent') {
+        renderSentItems();
+      } else {
+        renderReceivedItems();
+      }
+      showToast(target.favorite ? 'เพิ่มใน ⭐ รายการโปรดแล้ว' : 'นำออกจากรายการโปรดแล้ว', 'info');
+    }
+
+    function setSentFilter(mode) {
+      sentFilterMode = mode;
+      const allBtn = document.getElementById('sentFilterAllBtn');
+      const favBtn = document.getElementById('sentFilterFavBtn');
+      if (mode === 'all') {
+        allBtn.className = 'px-2.5 py-1 rounded-md bg-[#102447] text-blue-300 font-medium transition-all';
+        favBtn.className = 'px-2.5 py-1 rounded-md text-slate-400 hover:text-amber-300 font-medium transition-all flex items-center gap-1';
+      } else {
+        favBtn.className = 'px-2.5 py-1 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 font-medium transition-all flex items-center gap-1';
+        allBtn.className = 'px-2.5 py-1 rounded-md text-slate-400 hover:text-slate-200 font-medium transition-all';
+      }
+      renderSentItems();
+    }
+
+    function setReceivedFilter(mode) {
+      receivedFilterMode = mode;
+      const allBtn = document.getElementById('recFilterAllBtn');
+      const favBtn = document.getElementById('recFilterFavBtn');
+      if (mode === 'all') {
+        allBtn.className = 'px-2.5 py-1 rounded-md bg-[#102447] text-blue-300 font-medium transition-all';
+        favBtn.className = 'px-2.5 py-1 rounded-md text-slate-400 hover:text-amber-300 font-medium transition-all flex items-center gap-1';
+      } else {
+        favBtn.className = 'px-2.5 py-1 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 font-medium transition-all flex items-center gap-1';
+        allBtn.className = 'px-2.5 py-1 rounded-md text-slate-400 hover:text-slate-200 font-medium transition-all';
+      }
+      renderReceivedItems();
+    }
 
     function initDefaultDeviceName() {
       const savedName = localStorage.getItem('tpdrop_device_name');
@@ -901,8 +1181,10 @@
     function setConnectedUI(code, peerNameLabel) {
       isConnected = true;
       targetCode = code;
+      lastConnectedPeerName = peerNameLabel;
 
       updateHeaderStatus('connected', `เชื่อมต่อกับ ${peerNameLabel} (#${code}) แล้ว`);
+      renderFavoriteDevices();
 
       document.getElementById('targetDeviceSubtitle').innerHTML =
         `เชื่อมต่อกับ <span class="text-blue-400 font-semibold">${escapeHtml(peerNameLabel)} (#${escapeHtml(code)})</span> พร้อมรับ-ส่งข้อมูล`;
@@ -932,6 +1214,7 @@
         try { activeConn.close(); } catch (e) {}
         activeConn = null;
       }
+      renderFavoriteDevices();
 
       if (peer && peer.open) {
         updateHeaderStatus('ready', `ออนไลน์ พร้อมจับคู่ (รหัส #${myDeviceCode})`);
@@ -1410,12 +1693,23 @@
       const listEl = document.getElementById('sentItemsList');
       const countLabel = document.getElementById('sentCountLabel');
       const clearBtn = document.getElementById('clearSentBtn');
+      const favBadge = document.getElementById('sentFavCountBadge');
 
-      if (sentItems.length === 0) {
+      const favCount = sentItems.filter(i => i.favorite).length;
+      if (favBadge) {
+        favBadge.textContent = favCount;
+        favBadge.classList.toggle('hidden', favCount === 0);
+      }
+
+      const displayList = sentFilterMode === 'fav'
+        ? sentItems.filter(i => i.favorite)
+        : sentItems;
+
+      if (displayList.length === 0) {
         emptyState.classList.remove('hidden');
         listEl.classList.add('hidden');
-        countLabel.textContent = 'ยังไม่มีรายการ';
-        clearBtn.classList.add('hidden');
+        countLabel.textContent = sentItems.length === 0 ? 'ยังไม่มีรายการ' : `${sentItems.length} รายการ`;
+        clearBtn.classList.toggle('hidden', sentItems.length === 0);
         return;
       }
 
@@ -1424,10 +1718,16 @@
       countLabel.textContent = `${sentItems.length} รายการ`;
       clearBtn.classList.remove('hidden');
 
-      listEl.innerHTML = sentItems.map(item => {
+      listEl.innerHTML = displayList.map(item => {
+        const starBtn = `
+          <button onclick="toggleFavoriteItem('sent', '${item.id}')" class="p-1.5 rounded-lg border transition-all ${item.favorite ? 'bg-amber-500/20 border-amber-500/40 text-amber-300' : 'bg-[#101c33] border-transparent text-slate-500 hover:text-amber-300'}" title="${item.favorite ? 'นำออกจากรายการโปรด' : 'ติดดาวเป็นรายการโปรด'}">
+            ★
+          </button>
+        `;
+
         if (item.kind === 'text') {
           return `
-            <div class="p-3.5 rounded-xl bg-[#070c16] border border-[#162036] hover:border-blue-500/40 transition-all">
+            <div class="p-3.5 rounded-xl bg-[#070c16] border ${item.favorite ? 'border-amber-500/40' : 'border-[#162036]'} hover:border-blue-500/40 transition-all">
               <div class="flex items-start justify-between gap-3">
                 <div class="flex items-start gap-3 min-w-0 flex-1">
                   <div class="w-9 h-9 rounded-lg bg-blue-500/10 border border-blue-500/25 text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
@@ -1443,9 +1743,12 @@
                     <p class="text-xs text-slate-200 mt-1.5 break-all line-clamp-3 font-mono bg-[#0b1324] px-2.5 py-2 rounded-lg border border-[#192846]">${escapeHtml(item.text)}</p>
                   </div>
                 </div>
-                <button onclick="copyTextToClipboard('${encodeURIComponent(item.text)}')" class="px-2.5 py-1.5 rounded-lg bg-[#101c33] hover:bg-[#172847] text-blue-300 text-[11px] border border-blue-500/25 shrink-0 transition-colors">
-                  คัดลอก
-                </button>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  ${starBtn}
+                  <button onclick="copyTextToClipboard('${encodeURIComponent(item.text)}')" class="px-2.5 py-1.5 rounded-lg bg-[#101c33] hover:bg-[#172847] text-blue-300 text-[11px] border border-blue-500/25 shrink-0 transition-colors">
+                    คัดลอก
+                  </button>
+                </div>
               </div>
             </div>
           `;
@@ -1454,7 +1757,7 @@
         const isDone = item.status === 'completed';
         const isImg = item.mime && item.mime.startsWith('image/') && item.url;
         return `
-          <div class="p-3.5 rounded-xl bg-[#070c16] border border-[#162036] hover:border-blue-500/40 transition-all">
+          <div class="p-3.5 rounded-xl bg-[#070c16] border ${item.favorite ? 'border-amber-500/40' : 'border-[#162036]'} hover:border-blue-500/40 transition-all">
             <div class="flex items-center justify-between gap-3">
               <div class="flex items-center gap-3 min-w-0">
                 ${isImg
@@ -1470,10 +1773,11 @@
                   <p class="text-[11px] text-slate-500 mt-0.5">${formatBytes(item.size)} · ส่งไป #${escapeHtml(item.target)} · ${item.timestamp}</p>
                 </div>
               </div>
-              <div class="flex items-center gap-2 shrink-0">
+              <div class="flex items-center gap-1.5 shrink-0">
                 <span id="prog_label_${item.id}" class="text-[11px] font-medium ${isDone ? 'text-blue-400' : 'text-amber-400'}">
                   ${isDone ? 'ส่งสำเร็จ ✓' : item.progress + '%'}
                 </span>
+                ${starBtn}
                 ${item.url ? `
                   <a href="${item.url}" download="${escapeHtml(item.name)}" class="p-1.5 rounded-lg bg-[#101c33] hover:bg-[#172847] text-blue-300 border border-blue-500/25" title="ดาวน์โหลดไฟล์">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -1492,9 +1796,12 @@
     }
 
     function clearSentItems() {
-      sentItems = [];
+      // Keep starred favorites if user only clears normal items, or clear all non-favorites
+      const favs = sentItems.filter(i => i.favorite);
+      sentItems = favs;
+      persistStarredHistory();
       renderSentItems();
-      showToast('ล้างประวัติรายการที่ส่งแล้ว', 'info');
+      showToast(favs.length > 0 ? 'ล้างรายการทั่วไปแล้ว (คงรายการโปรด ⭐ ไว้)' : 'ล้างประวัติรายการที่ส่งแล้ว', 'info');
     }
 
     // --- Receiver Side & Real Scannable QR Code ---
@@ -1641,11 +1948,22 @@
       const emptyState = document.getElementById('receivedEmptyState');
       const listEl = document.getElementById('receivedItemsList');
       const countLabel = document.getElementById('receivedCountLabel');
+      const favBadge = document.getElementById('recFavCountBadge');
 
-      if (receivedItems.length === 0) {
+      const favCount = receivedItems.filter(i => i.favorite).length;
+      if (favBadge) {
+        favBadge.textContent = favCount;
+        favBadge.classList.toggle('hidden', favCount === 0);
+      }
+
+      const displayList = receivedFilterMode === 'fav'
+        ? receivedItems.filter(i => i.favorite)
+        : receivedItems;
+
+      if (displayList.length === 0) {
         emptyState.classList.remove('hidden');
         listEl.classList.add('hidden');
-        countLabel.textContent = 'ยังไม่มีรายการ';
+        countLabel.textContent = receivedItems.length === 0 ? 'ยังไม่มีรายการ' : `${receivedItems.length} รายการ`;
         return;
       }
 
@@ -1653,11 +1971,17 @@
       listEl.classList.remove('hidden');
       countLabel.textContent = `${receivedItems.length} รายการ`;
 
-      listEl.innerHTML = receivedItems.map(item => {
+      listEl.innerHTML = displayList.map(item => {
+        const starBtn = `
+          <button onclick="toggleFavoriteItem('received', '${item.id}')" class="p-1.5 rounded-lg border transition-all ${item.favorite ? 'bg-amber-500/20 border-amber-500/40 text-amber-300' : 'bg-[#101c33] border-transparent text-slate-500 hover:text-amber-300'}" title="${item.favorite ? 'นำออกจากรายการโปรด' : 'ติดดาวเป็นรายการโปรด'}">
+            ★
+          </button>
+        `;
+
         if (item.kind === 'text') {
           const isUrl = /^https?:\/\/\S+$/i.test(item.text.trim());
           return `
-            <div class="p-3.5 rounded-xl bg-[#070c16] border border-[#162036] hover:border-blue-500/40 transition-all">
+            <div class="p-3.5 rounded-xl bg-[#070c16] border ${item.favorite ? 'border-amber-500/40' : 'border-[#162036]'} hover:border-blue-500/40 transition-all">
               <div class="flex items-start justify-between gap-3">
                 <div class="flex items-start gap-3 min-w-0 flex-1">
                   <div class="w-9 h-9 rounded-lg bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
@@ -1674,6 +1998,7 @@
                   </div>
                 </div>
                 <div class="flex items-center gap-1.5 shrink-0">
+                  ${starBtn}
                   ${isUrl ? `
                     <a href="${escapeHtml(item.text.trim())}" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1.5 rounded-lg bg-[#101c33] hover:bg-[#172847] text-blue-300 text-xs border border-blue-500/25">
                       เปิดลิงก์
@@ -1691,7 +2016,7 @@
         const isReceiving = item.status === 'receiving';
         const isImg = item.mime && item.mime.startsWith('image/') && item.url;
         return `
-          <div class="p-3.5 rounded-xl bg-[#070c16] border border-[#162036] hover:border-blue-500/40 transition-all">
+          <div class="p-3.5 rounded-xl bg-[#070c16] border ${item.favorite ? 'border-amber-500/40' : 'border-[#162036]'} hover:border-blue-500/40 transition-all">
             <div class="flex items-center justify-between gap-3">
               <div class="flex items-center gap-3 min-w-0">
                 ${isImg
@@ -1707,10 +2032,11 @@
                   <p class="text-[11px] text-slate-500 mt-0.5">${formatBytes(item.size)} · จาก ${escapeHtml(item.sender || 'เครื่องต้นทาง')} · ${item.timestamp}</p>
                 </div>
               </div>
-              <div class="flex items-center gap-2 shrink-0">
+              <div class="flex items-center gap-1.5 shrink-0">
                 <span id="rec_prog_label_${item.id}" class="text-[11px] font-medium ${isReceiving ? 'text-amber-400' : 'text-emerald-400'}">
                   ${isReceiving ? `กำลังรับ ${item.progress || 0}%` : 'รับแล้ว ✓'}
                 </span>
+                ${starBtn}
                 ${item.url ? `
                   <a href="${item.url}" download="${escapeHtml(item.name)}" class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-xs font-medium transition-colors flex items-center gap-1.5 shadow-sm">
                     <span>บันทึกไฟล์</span>
